@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: Bible-Search
+
+# Bible data configuration
+bible:
+  data:
+    json-path: ${BIBLE_JSON_PATH:classpath:bible/bible_krv.json}
+    asv-json-path: ${BIBLE_ASV_JSON_PATH:classpath:bible/bible_asv.json}
+  
+  # Embedding configuration (Multilingual model for Korean + English)
+  embedding:
+    model-path: ${EMBEDDING_MODEL_PATH:classpath:models/multilingual-minilm/model.onnx}
+    tokenizer-path: ${EMBEDDING_TOKENIZER_PATH:classpath:models/multilingual-minilm/tokenizer.json}
+    chunk-size: 500
+    chunk-overlap: 50
+  
+  # Search configuration
+  search:
+    # Stage 1: Bi-encoder retrieval
+    candidate-count: 50
+    # Stage 2: Re-ranking & filtering
+    result-count: 5
+    min-score: 0.3
+
+# Server configuration
+server:
+  port: 8080
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+
+# Logging
+logging:
+  level:
+    io.github.nicechester: DEBUG
+    dev.langchain4j: INFO
