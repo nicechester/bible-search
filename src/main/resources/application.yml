@@ -35,8 +35,15 @@ management:
         include: health,info
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: always
       show-components: always
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
 
 # Logging
 logging:

@@ -45,14 +45,18 @@ EXPOSE 8080
 
 # JVM options optimized for containers and Cloud Run
 # - Uses container-aware memory settings
-# - Optimized for startup time
+# - Optimized for startup time with CDS (Class Data Sharing)
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
     -XX:MaxRAMPercentage=75.0 \
     -XX:InitialRAMPercentage=50.0 \
     -XX:+UseG1GC \
     -XX:+UseStringDeduplication \
-    -Djava.security.egd=file:/dev/./urandom"
+    -XX:+TieredCompilation \
+    -XX:TieredStopAtLevel=1 \
+    -Djava.security.egd=file:/dev/./urandom \
+    -Dspring.backgroundpreinitializer.ignore=true"
 
 # Run the application
 # Cloud Run sets PORT environment variable (default 8080)
+# Note: This app requires ~2GB memory and 2 CPU for embedding generation at startup
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar app.jar"]
