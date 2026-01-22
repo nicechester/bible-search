@@ -78,6 +78,9 @@ spring-shell.log
 .env.*.local
 *.env
 
+# GCP Configuration (contains project-specific settings)
+.gcp-config
+
 # Temporary files
 *.tmp
 *.temp
