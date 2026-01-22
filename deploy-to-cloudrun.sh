@@ -102,7 +102,7 @@ echo ""
 
 # Build Docker image
 echo "Building Docker image (this may take 3-5 minutes on first build)..."
-docker build --platform linux/amd64 -f Dockerfile.cloudrun -t ${IMAGE_NAME} .
+docker build --platform linux/amd64 -f Dockerfile -t ${IMAGE_NAME} .
 
 echo "✓ Image built"
 echo ""
