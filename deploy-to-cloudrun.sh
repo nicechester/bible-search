@@ -118,20 +118,27 @@ docker push ${IMAGE_NAME}
 echo "✓ Image pushed"
 echo ""
 
-# Deploy to Cloud Run
+# Deploy to Cloud Run using service YAML (for startup probe configuration)
 echo "Deploying to Cloud Run..."
+echo "(Note: First deployment takes ~5-10 minutes due to embedding generation)"
 
-gcloud run deploy ${SERVICE_NAME} \
-  --image ${IMAGE_NAME} \
-  --platform managed \
+# Create temporary service YAML with actual image name
+sed "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g" cloudrun-service.yaml > /tmp/cloudrun-service-deploy.yaml
+
+# Deploy using service YAML
+gcloud run services replace /tmp/cloudrun-service-deploy.yaml \
   --region ${REGION} \
-  --allow-unauthenticated \
-  --memory 2Gi \
-  --cpu 2 \
-  --max-instances 10 \
-  --min-instances 0 \
-  --timeout 300 \
-  --set-env-vars="JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+  --platform managed
+
+# Allow unauthenticated access
+gcloud run services add-iam-policy-binding ${SERVICE_NAME} \
+  --region ${REGION} \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  --quiet
+
+# Cleanup temp file
+rm -f /tmp/cloudrun-service-deploy.yaml
 
 echo "✓ Deployed!"
 echo ""

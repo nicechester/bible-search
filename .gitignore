@@ -92,3 +92,4 @@ test-output/
 surefire-reports/
 
 .java-version
+.envrc

@@ -7,24 +7,37 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/bible-search:$COMMIT_SHA']
 
-  # Deploy container image to Cloud Run
+  # Update service YAML with actual image
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        sed "s|IMAGE_PLACEHOLDER|gcr.io/$PROJECT_ID/bible-search:$COMMIT_SHA|g" \
+          cloudrun-service.yaml > /tmp/cloudrun-service-deploy.yaml
+
+  # Deploy using service YAML (includes startup probe config)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: gcloud
     args:
       - 'run'
       - 'services'
-      - 'update'
-      - 'bible-search'
-      - '--image=gcr.io/$PROJECT_ID/bible-search:$COMMIT_SHA'
+      - 'replace'
+      - '/tmp/cloudrun-service-deploy.yaml'
       - '--region=us-central1'
       - '--platform=managed'
-      - '--memory=2Gi'
-      - '--cpu=2'
-      - '--timeout=600'
-      - '--cpu-boost'
-      - '--startup-cpu-boost'
-      - '--min-instances=0'
-      - '--max-instances=3'
+
+  # Allow unauthenticated access
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'services'
+      - 'add-iam-policy-binding'
+      - 'bible-search'
+      - '--region=us-central1'
+      - '--member=allUsers'
+      - '--role=roles/run.invoker'
 
 images:
   - 'gcr.io/$PROJECT_ID/bible-search:$COMMIT_SHA'
