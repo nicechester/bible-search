@@ -104,6 +104,21 @@
             margin-top: 8px;
         }
 
+        .help-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: var(--accent-gold);
+            text-decoration: none;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+
+        .help-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
         /* Search Box */
         .search-container {
             background: var(--bg-secondary);
@@ -654,7 +669,115 @@
             border-color: var(--accent-gold);
         }
 
+        /* Parallel Bible Reader */
+        .parallel-reader {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        .parallel-column {
+            border-right: 1px solid var(--border-color);
+        }
+
+        .parallel-column:last-child {
+            border-right: none;
+        }
+
+        .parallel-column-header {
+            padding: 12px 20px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .parallel-column-title {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .parallel-verses {
+            padding: 16px;
+        }
+
+        .parallel-verse {
+            display: flex;
+            gap: 12px;
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border-color);
+            min-height: 60px;
+        }
+
+        .parallel-verse:last-child {
+            border-bottom: none;
+        }
+
+        .parallel-verse:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .parallel-verse.highlight {
+            background: rgba(212, 163, 115, 0.1);
+            border-left: 3px solid var(--accent-gold);
+            margin-left: -3px;
+        }
+
+        .parallel-verse-num {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+            min-width: 24px;
+            text-align: right;
+            padding-top: 2px;
+        }
+
+        .parallel-verse-content {
+            flex: 1;
+        }
+
+        .parallel-verse-title {
+            font-size: 0.8rem;
+            color: var(--accent-purple);
+            font-style: italic;
+            margin-bottom: 4px;
+        }
+
+        .parallel-verse-text {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+
+        .reader-body-parallel {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
         /* Responsive */
+        @media (max-width: 900px) {
+            .parallel-reader {
+                grid-template-columns: 1fr;
+            }
+
+            .parallel-column {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .parallel-column:last-child {
+                border-bottom: none;
+            }
+        }
+
         @media (max-width: 640px) {
             .container {
                 padding: 24px 16px;
@@ -685,6 +808,16 @@
                 flex-direction: column;
                 gap: 12px;
             }
+
+            .reader-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .reader-nav {
+                width: 100%;
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
@@ -696,6 +829,7 @@
                 <h1>Bible Search</h1>
             </div>
             <p class="tagline">Semantic verse discovery powered by AI embeddings</p>
+            <a href="/help.html" class="help-link">How does this work? →</a>
         </header>
 
         <main>
@@ -707,7 +841,7 @@
                             type="text" 
                             class="search-input" 
                             id="searchInput"
-                            placeholder="Search by meaning... e.g., 'love your neighbor' or 'faith in hard times'"
+                            placeholder="Search by meaning or open a passage (e.g., 'John 3:16' or 'love your neighbor')"
                             autocomplete="off"
                         >
                     </div>
@@ -767,6 +901,7 @@
 
         <footer>
             <p>
+                <a href="/help.html">Help &amp; Examples</a><br><br>
                 Zero latency · Zero cost · 100% local inference<br>
                 Built with <a href="https://docs.langchain4j.dev/" target="_blank">LangChain4j</a> + ONNX Runtime
             </p>
@@ -786,18 +921,392 @@
         let currentView = 'search'; // 'search' or 'reader'
         let lastSearchResults = null;
 
+        // ==================== Book Reference Parser ====================
+        
+        // Book name mappings to bookShort (case-insensitive)
+        const BOOK_MAP = {
+            // English - Full names
+            'genesis': { short: 'Gen', version: 'ASV' },
+            'exodus': { short: 'Ex', version: 'ASV' },
+            'leviticus': { short: 'Lev', version: 'ASV' },
+            'numbers': { short: 'Num', version: 'ASV' },
+            'deuteronomy': { short: 'Deut', version: 'ASV' },
+            'joshua': { short: 'Josh', version: 'ASV' },
+            'judges': { short: 'Judg', version: 'ASV' },
+            'ruth': { short: 'Ruth', version: 'ASV' },
+            '1 samuel': { short: '1 Sam', version: 'ASV' },
+            '2 samuel': { short: '2 Sam', version: 'ASV' },
+            '1 kings': { short: '1 Kgs', version: 'ASV' },
+            '2 kings': { short: '2 Kgs', version: 'ASV' },
+            '1 chronicles': { short: '1 Chr', version: 'ASV' },
+            '2 chronicles': { short: '2 Chr', version: 'ASV' },
+            'ezra': { short: 'Ezra', version: 'ASV' },
+            'nehemiah': { short: 'Neh', version: 'ASV' },
+            'esther': { short: 'Esth', version: 'ASV' },
+            'job': { short: 'Job', version: 'ASV' },
+            'psalms': { short: 'Ps', version: 'ASV' },
+            'psalm': { short: 'Ps', version: 'ASV' },
+            'proverbs': { short: 'Prov', version: 'ASV' },
+            'ecclesiastes': { short: 'Eccl', version: 'ASV' },
+            'song of solomon': { short: 'Song', version: 'ASV' },
+            'isaiah': { short: 'Isa', version: 'ASV' },
+            'jeremiah': { short: 'Jer', version: 'ASV' },
+            'lamentations': { short: 'Lam', version: 'ASV' },
+            'ezekiel': { short: 'Ezek', version: 'ASV' },
+            'daniel': { short: 'Dan', version: 'ASV' },
+            'hosea': { short: 'Hos', version: 'ASV' },
+            'joel': { short: 'Joel', version: 'ASV' },
+            'amos': { short: 'Amos', version: 'ASV' },
+            'obadiah': { short: 'Obad', version: 'ASV' },
+            'jonah': { short: 'Jonah', version: 'ASV' },
+            'micah': { short: 'Mic', version: 'ASV' },
+            'nahum': { short: 'Nah', version: 'ASV' },
+            'habakkuk': { short: 'Hab', version: 'ASV' },
+            'zephaniah': { short: 'Zeph', version: 'ASV' },
+            'haggai': { short: 'Hag', version: 'ASV' },
+            'zechariah': { short: 'Zech', version: 'ASV' },
+            'malachi': { short: 'Mal', version: 'ASV' },
+            'matthew': { short: 'Matt', version: 'ASV' },
+            'mark': { short: 'Mark', version: 'ASV' },
+            'luke': { short: 'Luke', version: 'ASV' },
+            'john': { short: 'John', version: 'ASV' },
+            'acts': { short: 'Acts', version: 'ASV' },
+            'romans': { short: 'Rom', version: 'ASV' },
+            '1 corinthians': { short: '1 Cor', version: 'ASV' },
+            '2 corinthians': { short: '2 Cor', version: 'ASV' },
+            'galatians': { short: 'Gal', version: 'ASV' },
+            'ephesians': { short: 'Eph', version: 'ASV' },
+            'philippians': { short: 'Phil', version: 'ASV' },
+            'colossians': { short: 'Col', version: 'ASV' },
+            '1 thessalonians': { short: '1 Thess', version: 'ASV' },
+            '2 thessalonians': { short: '2 Thess', version: 'ASV' },
+            '1 timothy': { short: '1 Tim', version: 'ASV' },
+            '2 timothy': { short: '2 Tim', version: 'ASV' },
+            'titus': { short: 'Titus', version: 'ASV' },
+            'philemon': { short: 'Phlm', version: 'ASV' },
+            'hebrews': { short: 'Heb', version: 'ASV' },
+            'james': { short: 'Jas', version: 'ASV' },
+            '1 peter': { short: '1 Pet', version: 'ASV' },
+            '2 peter': { short: '2 Pet', version: 'ASV' },
+            '1 john': { short: '1 John', version: 'ASV' },
+            '2 john': { short: '2 John', version: 'ASV' },
+            '3 john': { short: '3 John', version: 'ASV' },
+            'jude': { short: 'Jude', version: 'ASV' },
+            'revelation': { short: 'Rev', version: 'ASV' },
+            
+            // English - Common abbreviations
+            'gen': { short: 'Gen', version: 'ASV' },
+            'ex': { short: 'Ex', version: 'ASV' },
+            'exod': { short: 'Ex', version: 'ASV' },
+            'lev': { short: 'Lev', version: 'ASV' },
+            'num': { short: 'Num', version: 'ASV' },
+            'deut': { short: 'Deut', version: 'ASV' },
+            'josh': { short: 'Josh', version: 'ASV' },
+            'judg': { short: 'Judg', version: 'ASV' },
+            '1sam': { short: '1 Sam', version: 'ASV' },
+            '2sam': { short: '2 Sam', version: 'ASV' },
+            '1kgs': { short: '1 Kgs', version: 'ASV' },
+            '2kgs': { short: '2 Kgs', version: 'ASV' },
+            '1ki': { short: '1 Kgs', version: 'ASV' },
+            '2ki': { short: '2 Kgs', version: 'ASV' },
+            '1chr': { short: '1 Chr', version: 'ASV' },
+            '2chr': { short: '2 Chr', version: 'ASV' },
+            'neh': { short: 'Neh', version: 'ASV' },
+            'esth': { short: 'Esth', version: 'ASV' },
+            'ps': { short: 'Ps', version: 'ASV' },
+            'prov': { short: 'Prov', version: 'ASV' },
+            'eccl': { short: 'Eccl', version: 'ASV' },
+            'ecc': { short: 'Eccl', version: 'ASV' },
+            'song': { short: 'Song', version: 'ASV' },
+            'sos': { short: 'Song', version: 'ASV' },
+            'isa': { short: 'Isa', version: 'ASV' },
+            'jer': { short: 'Jer', version: 'ASV' },
+            'lam': { short: 'Lam', version: 'ASV' },
+            'ezek': { short: 'Ezek', version: 'ASV' },
+            'dan': { short: 'Dan', version: 'ASV' },
+            'hos': { short: 'Hos', version: 'ASV' },
+            'obad': { short: 'Obad', version: 'ASV' },
+            'mic': { short: 'Mic', version: 'ASV' },
+            'nah': { short: 'Nah', version: 'ASV' },
+            'hab': { short: 'Hab', version: 'ASV' },
+            'zeph': { short: 'Zeph', version: 'ASV' },
+            'hag': { short: 'Hag', version: 'ASV' },
+            'zech': { short: 'Zech', version: 'ASV' },
+            'mal': { short: 'Mal', version: 'ASV' },
+            'matt': { short: 'Matt', version: 'ASV' },
+            'mt': { short: 'Matt', version: 'ASV' },
+            'mk': { short: 'Mark', version: 'ASV' },
+            'lk': { short: 'Luke', version: 'ASV' },
+            'jn': { short: 'John', version: 'ASV' },
+            'rom': { short: 'Rom', version: 'ASV' },
+            '1cor': { short: '1 Cor', version: 'ASV' },
+            '2cor': { short: '2 Cor', version: 'ASV' },
+            'gal': { short: 'Gal', version: 'ASV' },
+            'eph': { short: 'Eph', version: 'ASV' },
+            'phil': { short: 'Phil', version: 'ASV' },
+            'col': { short: 'Col', version: 'ASV' },
+            '1thess': { short: '1 Thess', version: 'ASV' },
+            '2thess': { short: '2 Thess', version: 'ASV' },
+            '1tim': { short: '1 Tim', version: 'ASV' },
+            '2tim': { short: '2 Tim', version: 'ASV' },
+            'phlm': { short: 'Phlm', version: 'ASV' },
+            'heb': { short: 'Heb', version: 'ASV' },
+            'jas': { short: 'Jas', version: 'ASV' },
+            '1pet': { short: '1 Pet', version: 'ASV' },
+            '2pet': { short: '2 Pet', version: 'ASV' },
+            '1jn': { short: '1 John', version: 'ASV' },
+            '2jn': { short: '2 John', version: 'ASV' },
+            '3jn': { short: '3 John', version: 'ASV' },
+            'rev': { short: 'Rev', version: 'ASV' },
+            
+            // Korean - Full names
+            '창세기': { short: '창', version: 'KRV' },
+            '출애굽기': { short: '출', version: 'KRV' },
+            '레위기': { short: '레', version: 'KRV' },
+            '민수기': { short: '민', version: 'KRV' },
+            '신명기': { short: '신', version: 'KRV' },
+            '여호수아': { short: '수', version: 'KRV' },
+            '사사기': { short: '삿', version: 'KRV' },
+            '룻기': { short: '룻', version: 'KRV' },
+            '사무엘상': { short: '삼상', version: 'KRV' },
+            '사무엘하': { short: '삼하', version: 'KRV' },
+            '열왕기상': { short: '왕상', version: 'KRV' },
+            '열왕기하': { short: '왕하', version: 'KRV' },
+            '역대상': { short: '대상', version: 'KRV' },
+            '역대하': { short: '대하', version: 'KRV' },
+            '에스라': { short: '스', version: 'KRV' },
+            '느헤미야': { short: '느', version: 'KRV' },
+            '에스더': { short: '에', version: 'KRV' },
+            '욥기': { short: '욥', version: 'KRV' },
+            '시편': { short: '시', version: 'KRV' },
+            '잠언': { short: '잠', version: 'KRV' },
+            '전도서': { short: '전', version: 'KRV' },
+            '아가': { short: '아', version: 'KRV' },
+            '이사야': { short: '사', version: 'KRV' },
+            '예레미야': { short: '렘', version: 'KRV' },
+            '예레미야애가': { short: '애', version: 'KRV' },
+            '에스겔': { short: '겔', version: 'KRV' },
+            '다니엘': { short: '단', version: 'KRV' },
+            '호세아': { short: '호', version: 'KRV' },
+            '요엘': { short: '욜', version: 'KRV' },
+            '아모스': { short: '암', version: 'KRV' },
+            '오바댜': { short: '옵', version: 'KRV' },
+            '요나': { short: '욘', version: 'KRV' },
+            '미가': { short: '미', version: 'KRV' },
+            '나훔': { short: '나', version: 'KRV' },
+            '하박국': { short: '합', version: 'KRV' },
+            '스바냐': { short: '습', version: 'KRV' },
+            '학개': { short: '학', version: 'KRV' },
+            '스가랴': { short: '슥', version: 'KRV' },
+            '말라기': { short: '말', version: 'KRV' },
+            '마태복음': { short: '마', version: 'KRV' },
+            '마가복음': { short: '막', version: 'KRV' },
+            '누가복음': { short: '눅', version: 'KRV' },
+            '요한복음': { short: '요', version: 'KRV' },
+            '사도행전': { short: '행', version: 'KRV' },
+            '로마서': { short: '롬', version: 'KRV' },
+            '고린도전서': { short: '고전', version: 'KRV' },
+            '고린도후서': { short: '고후', version: 'KRV' },
+            '갈라디아서': { short: '갈', version: 'KRV' },
+            '에베소서': { short: '엡', version: 'KRV' },
+            '빌립보서': { short: '빌', version: 'KRV' },
+            '골로새서': { short: '골', version: 'KRV' },
+            '데살로니가전서': { short: '살전', version: 'KRV' },
+            '데살로니가후서': { short: '살후', version: 'KRV' },
+            '디모데전서': { short: '딤전', version: 'KRV' },
+            '디모데후서': { short: '딤후', version: 'KRV' },
+            '디도서': { short: '딛', version: 'KRV' },
+            '빌레몬서': { short: '몬', version: 'KRV' },
+            '히브리서': { short: '히', version: 'KRV' },
+            '야고보서': { short: '약', version: 'KRV' },
+            '베드로전서': { short: '벧전', version: 'KRV' },
+            '베드로후서': { short: '벧후', version: 'KRV' },
+            '요한일서': { short: '요일', version: 'KRV' },
+            '요한이서': { short: '요이', version: 'KRV' },
+            '요한삼서': { short: '요삼', version: 'KRV' },
+            '유다서': { short: '유', version: 'KRV' },
+            '요한계시록': { short: '계', version: 'KRV' },
+            
+            // Korean - Short names
+            '창': { short: '창', version: 'KRV' },
+            '출': { short: '출', version: 'KRV' },
+            '레': { short: '레', version: 'KRV' },
+            '민': { short: '민', version: 'KRV' },
+            '신': { short: '신', version: 'KRV' },
+            '수': { short: '수', version: 'KRV' },
+            '삿': { short: '삿', version: 'KRV' },
+            '룻': { short: '룻', version: 'KRV' },
+            '삼상': { short: '삼상', version: 'KRV' },
+            '삼하': { short: '삼하', version: 'KRV' },
+            '왕상': { short: '왕상', version: 'KRV' },
+            '왕하': { short: '왕하', version: 'KRV' },
+            '대상': { short: '대상', version: 'KRV' },
+            '대하': { short: '대하', version: 'KRV' },
+            '스': { short: '스', version: 'KRV' },
+            '느': { short: '느', version: 'KRV' },
+            '에': { short: '에', version: 'KRV' },
+            '욥': { short: '욥', version: 'KRV' },
+            '시': { short: '시', version: 'KRV' },
+            '잠': { short: '잠', version: 'KRV' },
+            '전': { short: '전', version: 'KRV' },
+            '아': { short: '아', version: 'KRV' },
+            '사': { short: '사', version: 'KRV' },
+            '렘': { short: '렘', version: 'KRV' },
+            '애': { short: '애', version: 'KRV' },
+            '겔': { short: '겔', version: 'KRV' },
+            '단': { short: '단', version: 'KRV' },
+            '호': { short: '호', version: 'KRV' },
+            '욜': { short: '욜', version: 'KRV' },
+            '암': { short: '암', version: 'KRV' },
+            '옵': { short: '옵', version: 'KRV' },
+            '욘': { short: '욘', version: 'KRV' },
+            '미': { short: '미', version: 'KRV' },
+            '나': { short: '나', version: 'KRV' },
+            '합': { short: '합', version: 'KRV' },
+            '습': { short: '습', version: 'KRV' },
+            '학': { short: '학', version: 'KRV' },
+            '슥': { short: '슥', version: 'KRV' },
+            '말': { short: '말', version: 'KRV' },
+            '마': { short: '마', version: 'KRV' },
+            '막': { short: '막', version: 'KRV' },
+            '눅': { short: '눅', version: 'KRV' },
+            '요': { short: '요', version: 'KRV' },
+            '행': { short: '행', version: 'KRV' },
+            '롬': { short: '롬', version: 'KRV' },
+            '고전': { short: '고전', version: 'KRV' },
+            '고후': { short: '고후', version: 'KRV' },
+            '갈': { short: '갈', version: 'KRV' },
+            '엡': { short: '엡', version: 'KRV' },
+            '빌': { short: '빌', version: 'KRV' },
+            '골': { short: '골', version: 'KRV' },
+            '살전': { short: '살전', version: 'KRV' },
+            '살후': { short: '살후', version: 'KRV' },
+            '딤전': { short: '딤전', version: 'KRV' },
+            '딤후': { short: '딤후', version: 'KRV' },
+            '딛': { short: '딛', version: 'KRV' },
+            '몬': { short: '몬', version: 'KRV' },
+            '히': { short: '히', version: 'KRV' },
+            '약': { short: '약', version: 'KRV' },
+            '벧전': { short: '벧전', version: 'KRV' },
+            '벧후': { short: '벧후', version: 'KRV' },
+            '요일': { short: '요일', version: 'KRV' },
+            '요이': { short: '요이', version: 'KRV' },
+            '요삼': { short: '요삼', version: 'KRV' },
+            '유': { short: '유', version: 'KRV' },
+            '계': { short: '계', version: 'KRV' },
+        };
+
+        // Mapping between ASV and KRV book shorts (for parallel view)
+        const ASV_TO_KRV = {
+            'Gen': '창', 'Ex': '출', 'Lev': '레', 'Num': '민', 'Deut': '신',
+            'Josh': '수', 'Judg': '삿', 'Ruth': '룻', '1 Sam': '삼상', '2 Sam': '삼하',
+            '1 Kgs': '왕상', '2 Kgs': '왕하', '1 Chr': '대상', '2 Chr': '대하',
+            'Ezra': '스', 'Neh': '느', 'Esth': '에', 'Job': '욥', 'Ps': '시',
+            'Prov': '잠', 'Eccl': '전', 'Song': '아', 'Isa': '사', 'Jer': '렘',
+            'Lam': '애', 'Ezek': '겔', 'Dan': '단', 'Hos': '호', 'Joel': '욜',
+            'Amos': '암', 'Obad': '옵', 'Jonah': '욘', 'Mic': '미', 'Nah': '나',
+            'Hab': '합', 'Zeph': '습', 'Hag': '학', 'Zech': '슥', 'Mal': '말',
+            'Matt': '마', 'Mark': '막', 'Luke': '눅', 'John': '요', 'Acts': '행',
+            'Rom': '롬', '1 Cor': '고전', '2 Cor': '고후', 'Gal': '갈', 'Eph': '엡',
+            'Phil': '빌', 'Col': '골', '1 Thess': '살전', '2 Thess': '살후',
+            '1 Tim': '딤전', '2 Tim': '딤후', 'Titus': '딛', 'Phlm': '몬',
+            'Heb': '히', 'Jas': '약', '1 Pet': '벧전', '2 Pet': '벧후',
+            '1 John': '요일', '2 John': '요이', '3 John': '요삼', 'Jude': '유', 'Rev': '계'
+        };
+
+        const KRV_TO_ASV = Object.fromEntries(
+            Object.entries(ASV_TO_KRV).map(([k, v]) => [v, k])
+        );
+
+        /**
+         * Parse a Bible reference from user input.
+         * Supports formats like:
+         * - "John 3" → { book: 'John', chapter: 3 }
+         * - "John 3:16" → { book: 'John', chapter: 3, verse: 16 }
+         * - "1 Corinthians 13" → { book: '1 Cor', chapter: 13 }
+         * - "창세기 1:1" → { book: '창', chapter: 1, verse: 1 }
+         * - "디도서 1장" → { book: '딛', chapter: 1 }
+         * - "요한복음 3장16절" → { book: '요', chapter: 3, verse: 16 }
+         * - "시편 23편" → { book: '시', chapter: 23 } (Psalms uses 편 instead of 장)
+         */
+        function parseReference(input) {
+            const trimmed = input.trim();
+            
+            // Patterns to match Bible references
+            // Pattern 1: Book with number prefix (e.g., "1 John 3:16", "1john3:16")
+            // Pattern 2: Simple book (e.g., "John 3:16", "Genesis 1")
+            
+            // Try to extract book name and chapter:verse
+            // This regex handles: "1 John 3:16", "john 3:16", "창세기 1:1", "창 1:1", "디도서 1장", "요한복음 3장16절"
+            // Also handles: "시편 23편" (Psalms uses 편 instead of 장)
+            const refPattern = /^((?:\d\s*)?[a-zA-Z\u3131-\u318E\uAC00-\uD7A3]+(?:\s+[a-zA-Z\u3131-\u318E\uAC00-\uD7A3]+)*)\s*(\d+)(?:장|편)?(?:\s*[:\.]\s*(\d+)절?|\s*(\d+)절)?$/i;
+            
+            const match = trimmed.match(refPattern);
+            if (!match) {
+                return null;
+            }
+            
+            let bookName = match[1].trim().toLowerCase();
+            const chapter = parseInt(match[2], 10);
+            // Verse can be in group 3 (after :.) or group 4 (after 장, like "3장16절")
+            const verse = match[3] ? parseInt(match[3], 10) : (match[4] ? parseInt(match[4], 10) : null);
+            
+            // Normalize book name variations
+            // Handle "1john" → "1 john", "1cor" → "1cor"
+            bookName = bookName.replace(/^(\d)\s*/, '$1 ').replace(/\s+/g, ' ').trim();
+            
+            // Try to find the book in our map
+            let bookInfo = BOOK_MAP[bookName];
+            
+            // If not found, try without spaces for numbered books
+            if (!bookInfo) {
+                const noSpace = bookName.replace(/\s+/g, '');
+                bookInfo = BOOK_MAP[noSpace];
+            }
+            
+            if (!bookInfo) {
+                return null;
+            }
+            
+            return {
+                bookShort: bookInfo.short,
+                version: bookInfo.version,
+                chapter: chapter,
+                verse: verse
+            };
+        }
+
+        /**
+         * Handle search - check if it's a reference first, otherwise do semantic search
+         */
+        function handleSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+            
+            // Try to parse as a Bible reference
+            const ref = parseReference(query);
+            if (ref) {
+                // It's a reference - open the reader directly
+                const version = versionFilter.value || ref.version;
+                openReader(ref.bookShort, ref.chapter, ref.verse, version);
+            } else {
+                // Not a reference - do semantic search
+                performSearch();
+            }
+        }
+
         // Handle suggestion chips
         document.querySelectorAll('.suggestion-chip').forEach(chip => {
             chip.addEventListener('click', () => {
                 searchInput.value = chip.dataset.query;
-                performSearch();
+                handleSearch();
             });
         });
 
         // Handle form submit
         searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            performSearch();
+            handleSearch();
         });
 
         async function performSearch() {
@@ -923,6 +1432,9 @@
 
         // ==================== Bible Reader ====================
 
+        // Store current reader state for navigation
+        let currentReaderState = null;
+
         async function openReader(bookShort, chapter, highlightVerse, version) {
             currentView = 'reader';
             resultsArea.innerHTML = `
@@ -933,15 +1445,51 @@
             `;
 
             try {
-                const versionParam = version ? `?version=${encodeURIComponent(version)}` : '';
-                const response = await fetch(`/api/bible/${encodeURIComponent(bookShort)}/${chapter}${versionParam}`);
+                // Determine ASV and KRV book shorts
+                let asvBookShort, krvBookShort;
                 
-                if (!response.ok) {
-                    throw new Error('Chapter not found');
+                if (ASV_TO_KRV[bookShort]) {
+                    // Input is ASV short
+                    asvBookShort = bookShort;
+                    krvBookShort = ASV_TO_KRV[bookShort];
+                } else if (KRV_TO_ASV[bookShort]) {
+                    // Input is KRV short
+                    krvBookShort = bookShort;
+                    asvBookShort = KRV_TO_ASV[bookShort];
+                } else {
+                    // Unknown, try both with same short
+                    asvBookShort = bookShort;
+                    krvBookShort = bookShort;
                 }
 
-                const data = await response.json();
-                renderReader(data, highlightVerse);
+                // Fetch both versions in parallel
+                const [asvResponse, krvResponse] = await Promise.all([
+                    fetch(`/api/bible/${encodeURIComponent(asvBookShort)}/${chapter}?version=ASV`),
+                    fetch(`/api/bible/${encodeURIComponent(krvBookShort)}/${chapter}?version=KRV`)
+                ]);
+
+                let asvData = null, krvData = null;
+
+                if (asvResponse.ok) {
+                    asvData = await asvResponse.json();
+                }
+                if (krvResponse.ok) {
+                    krvData = await krvResponse.json();
+                }
+
+                if (!asvData && !krvData) {
+                    throw new Error('Chapter not found in either version');
+                }
+
+                // Store state for navigation
+                currentReaderState = {
+                    asvBookShort,
+                    krvBookShort,
+                    chapter,
+                    totalChapters: Math.max(asvData?.totalChapters || 0, krvData?.totalChapters || 0)
+                };
+
+                renderParallelReader(asvData, krvData, highlightVerse);
             } catch (error) {
                 resultsArea.innerHTML = `
                     <div class="empty-state">
@@ -954,54 +1502,114 @@
             }
         }
 
-        function renderReader(data, highlightVerse) {
-            const versionClass = data.version.toLowerCase() === '개역개정' ? 'krv' : data.version.toLowerCase();
-            const hasPrevChapter = data.chapter > 1;
-            const hasNextChapter = data.chapter < data.totalChapters;
+        function renderParallelReader(asvData, krvData, highlightVerse) {
+            // Use whichever data we have for metadata
+            const primaryData = krvData || asvData;
+            const chapter = primaryData.chapter;
+            const totalChapters = currentReaderState.totalChapters;
+            const hasPrevChapter = chapter > 1;
+            const hasNextChapter = chapter < totalChapters;
 
             // Build chapter options
             let chapterOptions = '';
-            for (let i = 1; i <= data.totalChapters; i++) {
-                chapterOptions += `<option value="${i}" ${i === data.chapter ? 'selected' : ''}>${i}장</option>`;
+            for (let i = 1; i <= totalChapters; i++) {
+                chapterOptions += `<option value="${i}" ${i === chapter ? 'selected' : ''}>${i}장</option>`;
             }
 
-            const versesHtml = data.verses.map(verse => {
-                const isHighlight = verse.verse === highlightVerse;
-                return `
-                    <div class="reader-verse ${isHighlight ? 'highlight' : ''}" id="verse-${verse.verse}">
-                        <span class="verse-num">${verse.verse}</span>
-                        <div class="verse-content">
-                            ${verse.title ? `<div class="verse-title">${verse.title}</div>` : ''}
-                            <p class="verse-text-reader">${verse.text}</p>
+            // Get max verses count
+            const maxVerses = Math.max(
+                asvData?.verses?.length || 0,
+                krvData?.verses?.length || 0
+            );
+
+            // Build verse maps for easy lookup
+            const asvVerseMap = {};
+            const krvVerseMap = {};
+            if (asvData?.verses) {
+                asvData.verses.forEach(v => asvVerseMap[v.verse] = v);
+            }
+            if (krvData?.verses) {
+                krvData.verses.forEach(v => krvVerseMap[v.verse] = v);
+            }
+
+            // Build parallel verses HTML
+            let krvVersesHtml = '';
+            let asvVersesHtml = '';
+
+            for (let i = 1; i <= maxVerses; i++) {
+                const krvVerse = krvVerseMap[i];
+                const asvVerse = asvVerseMap[i];
+                const isHighlight = i === highlightVerse;
+
+                // KRV column
+                krvVersesHtml += `
+                    <div class="parallel-verse ${isHighlight ? 'highlight' : ''}" id="krv-verse-${i}">
+                        <span class="parallel-verse-num">${i}</span>
+                        <div class="parallel-verse-content">
+                            ${krvVerse?.title ? `<div class="parallel-verse-title">${krvVerse.title}</div>` : ''}
+                            <p class="parallel-verse-text">${krvVerse?.text || ''}</p>
                         </div>
                     </div>
                 `;
-            }).join('');
+
+                // ASV column
+                asvVersesHtml += `
+                    <div class="parallel-verse ${isHighlight ? 'highlight' : ''}" id="asv-verse-${i}">
+                        <span class="parallel-verse-num">${i}</span>
+                        <div class="parallel-verse-content">
+                            ${asvVerse?.title ? `<div class="parallel-verse-title">${asvVerse.title}</div>` : ''}
+                            <p class="parallel-verse-text">${asvVerse?.text || ''}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Get book names
+            const krvBookName = krvData?.bookName || primaryData.bookName;
+            const asvBookName = asvData?.bookName || primaryData.bookName;
 
             resultsArea.innerHTML = `
                 <div class="reader-container">
                     <div class="reader-header">
                         <div class="reader-title">
                             <button class="back-btn" onclick="backToSearch()" title="Back to search">←</button>
-                            <h2>${data.bookName} ${data.chapter}장</h2>
-                            <span class="reader-version ${versionClass}">${data.version}</span>
+                            <h2>${krvBookName} ${chapter}장</h2>
                         </div>
                         <div class="reader-nav">
-                            <button class="nav-btn" onclick="openReader('${data.bookShort}', ${data.chapter - 1}, null, '${data.version}')" ${!hasPrevChapter ? 'disabled' : ''}>
+                            <button class="nav-btn" onclick="navigateChapter(${chapter - 1})" ${!hasPrevChapter ? 'disabled' : ''}>
                                 ← 이전
                             </button>
                             <div class="chapter-selector">
-                                <select class="chapter-select" onchange="openReader('${data.bookShort}', parseInt(this.value), null, '${data.version}')">
+                                <select class="chapter-select" onchange="navigateChapter(parseInt(this.value))">
                                     ${chapterOptions}
                                 </select>
                             </div>
-                            <button class="nav-btn" onclick="openReader('${data.bookShort}', ${data.chapter + 1}, null, '${data.version}')" ${!hasNextChapter ? 'disabled' : ''}>
+                            <button class="nav-btn" onclick="navigateChapter(${chapter + 1})" ${!hasNextChapter ? 'disabled' : ''}>
                                 다음 →
                             </button>
                         </div>
                     </div>
-                    <div class="reader-body">
-                        ${versesHtml}
+                    <div class="reader-body-parallel">
+                        <div class="parallel-reader">
+                            <div class="parallel-column">
+                                <div class="parallel-column-header">
+                                    <span class="parallel-column-title">${krvBookName}</span>
+                                    <span class="reader-version krv">개역개정</span>
+                                </div>
+                                <div class="parallel-verses">
+                                    ${krvVersesHtml}
+                                </div>
+                            </div>
+                            <div class="parallel-column">
+                                <div class="parallel-column-header">
+                                    <span class="parallel-column-title">${asvBookName}</span>
+                                    <span class="reader-version asv">ASV</span>
+                                </div>
+                                <div class="parallel-verses">
+                                    ${asvVersesHtml}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1009,11 +1617,17 @@
             // Scroll to highlighted verse after render
             if (highlightVerse) {
                 setTimeout(() => {
-                    const highlightEl = document.getElementById(`verse-${highlightVerse}`);
+                    const highlightEl = document.getElementById(`krv-verse-${highlightVerse}`);
                     if (highlightEl) {
                         highlightEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 }, 100);
+            }
+        }
+
+        function navigateChapter(chapter) {
+            if (currentReaderState) {
+                openReader(currentReaderState.asvBookShort, chapter, null, 'ASV');
             }
         }
 
@@ -1070,8 +1684,22 @@
         `;
         document.head.appendChild(style);
 
-        // Focus search input on load
+        // Handle URL query parameter on page load
+        function handleUrlQuery() {
+            const params = new URLSearchParams(window.location.search);
+            const query = params.get('q');
+            if (query) {
+                searchInput.value = query;
+                // Clear the URL parameter without reloading
+                window.history.replaceState({}, document.title, window.location.pathname);
+                // Execute the search/reference
+                setTimeout(() => handleSearch(), 100);
+            }
+        }
+
+        // Focus search input on load and check for query param
         searchInput.focus();
+        handleUrlQuery();
     </script>
 </body>
 </html>
