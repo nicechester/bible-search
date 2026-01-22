@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help — Bible Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-card: #1c2128;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-gold: #d4a373;
+            --accent-gold-dim: #9e7c5a;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-purple: #a371f7;
+            --border-color: #30363d;
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 0%, rgba(212, 163, 115, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(88, 166, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dim) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        h1 {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 8px;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-gold);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Content sections */
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .section h2 {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section h2 .icon {
+            font-size: 1.5rem;
+        }
+
+        .section p {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .section p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Example searches */
+        .example-grid {
+            display: grid;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .example-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .example-card:hover {
+            border-color: var(--accent-gold-dim);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .example-category {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-purple);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .example-query {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 1.15rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .example-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Tips list */
+        .tips-list {
+            list-style: none;
+            margin-top: 16px;
+        }
+
+        .tips-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tips-list li:last-child {
+            border-bottom: none;
+        }
+
+        .tip-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .tip-content {
+            flex: 1;
+        }
+
+        .tip-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .tip-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Version badges */
+        .version-info {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .version-badge .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .version-badge .dot.asv { background: var(--accent-blue); }
+        .version-badge .dot.krv { background: var(--accent-purple); }
+
+        .version-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .version-lang {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Feature grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .feature-item {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Code/keyword highlight */
+        code {
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--accent-gold);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--accent-gold);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .section {
+                padding: 24px;
+            }
+
+            .version-info {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Search</a>
+        
+        <header>
+            <a href="/" class="logo">
+                <div class="logo-icon">📖</div>
+                <h1>Help Guide</h1>
+            </a>
+            <p class="tagline">Learn how to search the Bible by meaning</p>
+        </header>
+
+        <main>
+            <!-- How It Works -->
+            <section class="section">
+                <h2><span class="icon">✨</span> How It Works</h2>
+                <p>
+                    Bible Search uses <strong>semantic search</strong> powered by AI embeddings. 
+                    Unlike traditional keyword search, it understands the <em>meaning</em> behind your query 
+                    and finds verses that are conceptually related—even if they don't contain the exact words you typed.
+                </p>
+                <p>
+                    For example, searching for "courage in difficult times" will find verses about 
+                    strength, faith, and perseverance, not just verses containing the word "courage."
+                </p>
+
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">🧠</div>
+                        <div class="feature-title">Semantic Understanding</div>
+                        <div class="feature-desc">Finds verses by meaning, not keywords</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">⚡</div>
+                        <div class="feature-title">Instant Results</div>
+                        <div class="feature-desc">100% local, zero latency</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🌍</div>
+                        <div class="feature-title">Multilingual</div>
+                        <div class="feature-desc">Search in English or Korean</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🔒</div>
+                        <div class="feature-title">Private</div>
+                        <div class="feature-desc">All processing happens locally</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Example Searches -->
+            <section class="section">
+                <h2><span class="icon">🔍</span> Example Searches</h2>
+                <p>Try these example searches to discover how semantic search works:</p>
+
+                <div class="example-grid">
+                    <div class="example-card" onclick="window.location.href='/?q=love+your+neighbor'">
+                        <div class="example-category">Relationships</div>
+                        <div class="example-query">love your neighbor</div>
+                        <div class="example-description">Find verses about loving others, compassion, and treating people well</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=comfort+in+suffering'">
+                        <div class="example-category">Comfort</div>
+                        <div class="example-query">comfort in suffering</div>
+                        <div class="example-description">Discover passages about God's comfort during trials and tribulation</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=God%27s+faithfulness'">
+                        <div class="example-category">God's Character</div>
+                        <div class="example-query">God's faithfulness</div>
+                        <div class="example-description">Explore verses about God's unwavering loyalty and trustworthiness</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=forgiveness+of+sins'">
+                        <div class="example-category">Salvation</div>
+                        <div class="example-query">forgiveness of sins</div>
+                        <div class="example-description">Find passages about redemption, mercy, and being forgiven</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=eternal+life'">
+                        <div class="example-category">Eternal Hope</div>
+                        <div class="example-query">eternal life</div>
+                        <div class="example-description">Discover what the Bible says about everlasting life and salvation</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=fear+and+anxiety'">
+                        <div class="example-category">Emotional Support</div>
+                        <div class="example-query">fear and anxiety</div>
+                        <div class="example-description">Find verses that address worry, fear, and finding peace</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=wisdom+for+decisions'">
+                        <div class="example-category">Guidance</div>
+                        <div class="example-query">wisdom for decisions</div>
+                        <div class="example-description">Explore passages about seeking wisdom and divine guidance</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=창조의+아름다움'">
+                        <div class="example-category">Korean Search</div>
+                        <div class="example-query">창조의 아름다움</div>
+                        <div class="example-description">Search in Korean: "beauty of creation"</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=giving+generously'">
+                        <div class="example-category">Stewardship</div>
+                        <div class="example-query">giving generously</div>
+                        <div class="example-description">Find verses about generosity, tithing, and helping others</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=strength+in+weakness'">
+                        <div class="example-category">Faith</div>
+                        <div class="example-query">strength in weakness</div>
+                        <div class="example-description">Discover how God's power works through human weakness</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=finding+purpose+in+life'">
+                        <div class="example-category">Purpose</div>
+                        <div class="example-query">finding purpose in life</div>
+                        <div class="example-description">Explore what the Bible says about meaning and calling</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=patience+and+waiting'">
+                        <div class="example-category">Character</div>
+                        <div class="example-query">patience and waiting</div>
+                        <div class="example-description">Find passages about waiting on God and developing patience</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Direct Navigation -->
+            <section class="section">
+                <h2><span class="icon">📍</span> Open a Passage Directly</h2>
+                <p>
+                    You can type a book name and chapter number to jump directly to that passage.
+                    The search box recognizes Bible references in many formats:
+                </p>
+                
+                <div class="example-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                    <div class="example-card" onclick="window.location.href='/?q=John+3:16'">
+                        <div class="example-category">With Verse</div>
+                        <div class="example-query">John 3:16</div>
+                    </div>
+                    <div class="example-card" onclick="window.location.href='/?q=Genesis+1'">
+                        <div class="example-category">Chapter Only</div>
+                        <div class="example-query">Genesis 1</div>
+                    </div>
+                    <div class="example-card" onclick="window.location.href='/?q=Ps+23'">
+                        <div class="example-category">Abbreviation</div>
+                        <div class="example-query">Ps 23</div>
+                    </div>
+                    <div class="example-card" onclick="window.location.href='/?q=1+Cor+13'">
+                        <div class="example-category">Numbered Book</div>
+                        <div class="example-query">1 Cor 13</div>
+                    </div>
+                    <div class="example-card" onclick="window.location.href='/?q=요한복음+3:16'">
+                        <div class="example-category">Korean Full</div>
+                        <div class="example-query">요한복음 3:16</div>
+                    </div>
+                    <div class="example-card" onclick="window.location.href='/?q=창+1'">
+                        <div class="example-category">Korean Short</div>
+                        <div class="example-query">창 1</div>
+                    </div>
+                </div>
+                
+                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
+                    <strong>Supported formats:</strong> "John 3", "John 3:16", "Jn 3:16", "1 Corinthians 13", "1Cor13:1", 
+                    "요한복음 3장16", "요 3:16", "창세기 1:1", "시편 23"
+                </p>
+            </section>
+
+            <!-- Search Tips -->
+            <section class="section">
+                <h2><span class="icon">💡</span> Search Tips</h2>
+                
+                <ul class="tips-list">
+                    <li>
+                        <span class="tip-icon">✅</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Use Natural Language</div>
+                            <div class="tip-description">
+                                Write your query like you're asking a friend. Instead of "love faith hope", 
+                                try "what does the Bible say about faith, hope, and love?"
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon">✅</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Describe Concepts</div>
+                            <div class="tip-description">
+                                Search for ideas and themes rather than specific words. 
+                                "How to handle difficult people" will find relevant verses even without exact matches.
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon">✅</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Try Different Phrasings</div>
+                            <div class="tip-description">
+                                If you don't get the results you want, rephrase your query. 
+                                "God's love" and "how much does God love me" may give different results.
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon">✅</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Adjust the Score Threshold</div>
+                            <div class="tip-description">
+                                Lower the <code>Min Score</code> to see more results (less relevant), 
+                                or raise it to see only highly relevant verses.
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon">✅</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Filter by Version</div>
+                            <div class="tip-description">
+                                Use the version filter to search only in English (ASV) or Korean (KRV) 
+                                if you want results in a specific language.
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon">✅</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Click to Read More</div>
+                            <div class="tip-description">
+                                Click on any search result to open the full chapter and read the verse in context.
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Bible Versions -->
+            <section class="section">
+                <h2><span class="icon">📚</span> Bible Versions</h2>
+                <p>Bible Search currently includes two complete Bible translations:</p>
+                
+                <div class="version-info">
+                    <div class="version-badge">
+                        <span class="dot asv"></span>
+                        <div>
+                            <div class="version-name">ASV</div>
+                            <div class="version-lang">American Standard Version (English)</div>
+                        </div>
+                    </div>
+                    <div class="version-badge">
+                        <span class="dot krv"></span>
+                        <div>
+                            <div class="version-name">KRV</div>
+                            <div class="version-lang">개역개정 (Korean Revised Version)</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Understanding Scores -->
+            <section class="section">
+                <h2><span class="icon">📊</span> Understanding Scores</h2>
+                <p>
+                    Each search result shows a <strong>relevance score</strong> from 0% to 100%. 
+                    This indicates how semantically similar the verse is to your query:
+                </p>
+                
+                <ul class="tips-list">
+                    <li>
+                        <span class="tip-icon" style="color: #3fb950;">●</span>
+                        <div class="tip-content">
+                            <div class="tip-title">50%+ (Green) — High Relevance</div>
+                            <div class="tip-description">
+                                Strongly related to your query. These verses directly address your topic.
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon" style="color: #d29922;">●</span>
+                        <div class="tip-content">
+                            <div class="tip-title">35-50% (Yellow) — Moderate Relevance</div>
+                            <div class="tip-description">
+                                Related to your query. These verses touch on similar themes.
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon" style="color: #8b949e;">●</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Below 35% (Gray) — Lower Relevance</div>
+                            <div class="tip-description">
+                                Loosely connected. May still be valuable but less directly related.
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>
+                <a href="/">← Back to Bible Search</a><br><br>
+                Zero latency · Zero cost · 100% local inference<br>
+                Built with <a href="https://docs.langchain4j.dev/" target="_blank">LangChain4j</a> + ONNX Runtime
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
