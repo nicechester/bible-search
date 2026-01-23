@@ -9,15 +9,42 @@ FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /build
 
-# Install Maven
-RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
+# Install Maven and curl
+RUN apt-get update && apt-get install -y maven curl && rm -rf /var/lib/apt/lists/*
 
 # Copy pom.xml first to leverage Docker layer caching for dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy source code and build
+# Copy source code
 COPY src ./src
+
+# Download ONNX model if not present (it's in .gitignore so won't be in repo)
+RUN if [ ! -f src/main/resources/models/multilingual-minilm/model.onnx ]; then \
+      echo "Downloading ONNX model..." && \
+      mkdir -p src/main/resources/models/multilingual-minilm && \
+      curl -L -o src/main/resources/models/multilingual-minilm/model.onnx \
+        'https://huggingface.co/nicekchester/paraphrase-multilingual-MiniLM-L12-v2-onnx/resolve/main/model_quantized.onnx' && \
+      echo "Model downloaded successfully"; \
+    else \
+      echo "ONNX model already exists"; \
+    fi
+
+# Download tokenizer files if not present
+RUN if [ ! -f src/main/resources/models/multilingual-minilm/tokenizer.json ]; then \
+      echo "Downloading tokenizer..." && \
+      curl -L -o src/main/resources/models/multilingual-minilm/tokenizer.json \
+        'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer.json' && \
+      curl -L -o src/main/resources/models/multilingual-minilm/tokenizer_config.json \
+        'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer_config.json' && \
+      curl -L -o src/main/resources/models/multilingual-minilm/special_tokens_map.json \
+        'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/special_tokens_map.json' && \
+      echo "Tokenizer downloaded successfully"; \
+    else \
+      echo "Tokenizer already exists"; \
+    fi
+
+# Build the application
 RUN mvn clean package -DskipTests -B
 
 # =============================================================================
