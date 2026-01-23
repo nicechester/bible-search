@@ -16,7 +16,7 @@ steps:
         sed "s|IMAGE_PLACEHOLDER|gcr.io/$PROJECT_ID/bible-search:$COMMIT_SHA|g" \
           /workspace/cloudrun-service.yaml > /workspace/cloudrun-service-deploy.yaml
         gcloud run services replace /workspace/cloudrun-service-deploy.yaml \
-          --region=europe-west1 \
+          --region=us-central1 \
           --platform=managed
 
   # Allow unauthenticated access
@@ -27,7 +27,7 @@ steps:
       - 'services'
       - 'add-iam-policy-binding'
       - 'bible-search'
-      - '--region=europe-west1'
+      - '--region=us-central1'
       - '--member=allUsers'
       - '--role=roles/run.invoker'
 
