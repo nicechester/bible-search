@@ -20,26 +20,33 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 
 # Download ONNX model if not present (it's in .gitignore so won't be in repo)
-RUN if [ ! -f src/main/resources/models/multilingual-minilm/model.onnx ]; then \
-      echo "Downloading ONNX model..." && \
-      mkdir -p src/main/resources/models/multilingual-minilm && \
-      curl -L -o src/main/resources/models/multilingual-minilm/model.onnx \
-        'https://huggingface.co/nicekchester/paraphrase-multilingual-MiniLM-L12-v2-onnx/resolve/main/model_quantized.onnx' && \
-      echo "Model downloaded successfully"; \
+# Using the official sentence-transformers model from HuggingFace
+RUN mkdir -p src/main/resources/models/multilingual-minilm && \
+    if [ ! -f src/main/resources/models/multilingual-minilm/model.onnx ] || [ $(stat -c%s src/main/resources/models/multilingual-minilm/model.onnx 2>/dev/null || echo 0) -lt 1000000 ]; then \
+      echo "Downloading ONNX model from HuggingFace..." && \
+      curl -fSL --retry 3 --retry-delay 5 -o src/main/resources/models/multilingual-minilm/model.onnx \
+        'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/onnx/model.onnx' && \
+      MODEL_SIZE=$(stat -c%s src/main/resources/models/multilingual-minilm/model.onnx) && \
+      echo "Model downloaded: ${MODEL_SIZE} bytes" && \
+      if [ "$MODEL_SIZE" -lt 10000000 ]; then \
+        echo "ERROR: Model file too small, download may have failed" && \
+        cat src/main/resources/models/multilingual-minilm/model.onnx && \
+        exit 1; \
+      fi; \
     else \
       echo "ONNX model already exists"; \
     fi
 
 # Download tokenizer files if not present
 RUN if [ ! -f src/main/resources/models/multilingual-minilm/tokenizer.json ]; then \
-      echo "Downloading tokenizer..." && \
-      curl -L -o src/main/resources/models/multilingual-minilm/tokenizer.json \
+      echo "Downloading tokenizer files..." && \
+      curl -fSL --retry 3 -o src/main/resources/models/multilingual-minilm/tokenizer.json \
         'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer.json' && \
-      curl -L -o src/main/resources/models/multilingual-minilm/tokenizer_config.json \
+      curl -fSL --retry 3 -o src/main/resources/models/multilingual-minilm/tokenizer_config.json \
         'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer_config.json' && \
-      curl -L -o src/main/resources/models/multilingual-minilm/special_tokens_map.json \
+      curl -fSL --retry 3 -o src/main/resources/models/multilingual-minilm/special_tokens_map.json \
         'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/special_tokens_map.json' && \
-      echo "Tokenizer downloaded successfully"; \
+      echo "Tokenizer files downloaded successfully"; \
     else \
       echo "Tokenizer already exists"; \
     fi
