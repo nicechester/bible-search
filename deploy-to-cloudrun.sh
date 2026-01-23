@@ -100,9 +100,9 @@ gcloud services enable containerregistry.googleapis.com --quiet 2>/dev/null || t
 echo "✓ APIs enabled"
 echo ""
 
-# Build Docker image
-echo "Building Docker image (this may take 3-5 minutes on first build)..."
-docker build --platform linux/amd64 -f Dockerfile -t ${IMAGE_NAME} .
+# Build Docker image (--no-cache ensures latest code changes are included)
+echo "Building Docker image (this may take 3-5 minutes)..."
+docker build --no-cache --platform linux/amd64 -f Dockerfile -t ${IMAGE_NAME} .
 
 echo "✓ Image built"
 echo ""
