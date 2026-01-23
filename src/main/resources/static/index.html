@@ -270,6 +270,33 @@
         .stat-badge .dot.asv { background: var(--accent-blue); }
         .stat-badge .dot.krv { background: var(--accent-purple); }
 
+        .method-badge {
+            margin-left: 12px;
+            font-weight: 500;
+        }
+
+        .method-badge.keyword {
+            background: rgba(63, 185, 80, 0.15);
+            border-color: rgba(63, 185, 80, 0.3);
+            color: var(--score-high);
+        }
+
+        .method-badge.semantic {
+            background: rgba(88, 166, 255, 0.15);
+            border-color: rgba(88, 166, 255, 0.3);
+            color: var(--accent-blue);
+        }
+
+        .method-badge.hybrid {
+            background: rgba(163, 113, 247, 0.15);
+            border-color: rgba(163, 113, 247, 0.3);
+            color: var(--accent-purple);
+        }
+
+        .method-icon {
+            font-size: 0.9rem;
+        }
+
         /* Results */
         .results-container {
             display: flex;
@@ -828,7 +855,7 @@
                 <div class="logo-icon">📖</div>
                 <h1>Bible Search</h1>
             </div>
-            <p class="tagline">Semantic verse discovery powered by AI embeddings</p>
+            <p class="tagline">Intelligent search with automatic keyword & semantic detection</p>
             <a href="/help.html" class="help-link">How does this work? →</a>
         </header>
 
@@ -841,7 +868,7 @@
                             type="text" 
                             class="search-input" 
                             id="searchInput"
-                            placeholder="Search by meaning or open a passage (e.g., 'John 3:16' or 'love your neighbor')"
+                            placeholder="Try '가사라는 지명' (keyword) or '사랑에 대한 말씀' (semantic) or 'John 3:16'"
                             autocomplete="off"
                         >
                     </div>
@@ -882,17 +909,23 @@
                     <div class="empty-icon">✨</div>
                     <h2 class="empty-title">Discover Scripture</h2>
                     <p class="empty-description">
-                        Search for Bible verses by meaning, not just keywords. 
-                        Our semantic search understands context and finds relevant passages.
+                        Search by <strong>keyword</strong> (exact word match) or by <strong>meaning</strong> (semantic).
+                            Our AI automatically detects your intent and uses the best search method.
                     </p>
                     <div class="suggestions">
-                        <p class="suggestions-title">Try searching for:</p>
+                        <p class="suggestions-title">🧠 Semantic — search by meaning:</p>
                         <div class="suggestion-chips">
-                            <span class="suggestion-chip" data-query="love your neighbor">love your neighbor</span>
-                            <span class="suggestion-chip" data-query="God's faithfulness">God's faithfulness</span>
+                            <span class="suggestion-chip" data-query="사랑에 대한 말씀">사랑에 대한 말씀</span>
                             <span class="suggestion-chip" data-query="comfort in suffering">comfort in suffering</span>
-                            <span class="suggestion-chip" data-query="eternal life">eternal life</span>
-                            <span class="suggestion-chip" data-query="forgiveness of sins">forgiveness of sins</span>
+                            <span class="suggestion-chip" data-query="God's faithfulness">God's faithfulness</span>
+                            <span class="suggestion-chip" data-query="용서에 관한 구절">용서에 관한 구절</span>
+                        </div>
+                        <p class="suggestions-title" style="margin-top: 16px;">🔤 Keyword — find specific words:</p>
+                        <div class="suggestion-chips">
+                            <span class="suggestion-chip" data-query="가사라는 지명이 나오는 구절">가사라는 지명</span>
+                            <span class="suggestion-chip" data-query="모세가 등장하는 구절">모세가 등장하는</span>
+                            <span class="suggestion-chip" data-query="다윗이라는 인물">다윗이라는 인물</span>
+                            <span class="suggestion-chip" data-query="verses containing shepherd">containing shepherd</span>
                         </div>
                     </div>
                 </div>
@@ -1375,10 +1408,20 @@
                 return;
             }
 
+            // Build search method badge
+            const methodBadge = data.searchMethod ? `
+                <span class="stat-badge method-badge ${data.searchMethod.toLowerCase()}">
+                    <span class="method-icon">${data.searchMethod === 'KEYWORD' ? '🔤' : data.searchMethod === 'SEMANTIC' ? '🧠' : '🔄'}</span>
+                    ${data.searchMethod === 'KEYWORD' ? 'Keyword' : data.searchMethod === 'SEMANTIC' ? 'Semantic' : 'Hybrid'}
+                    ${data.extractedKeyword ? `: "${data.extractedKeyword}"` : ''}
+                </span>
+            ` : '';
+
             const statsHtml = `
                 <div class="stats-bar">
                     <div class="stats-left">
                         Found <strong>${data.totalResults}</strong> verses in <strong>${data.searchTimeMs}ms</strong>
+                        ${methodBadge}
                     </div>
                     <div class="stats-right">
                         <span class="stat-badge">
@@ -1642,19 +1685,25 @@
                         <div class="empty-icon">✨</div>
                         <h2 class="empty-title">Discover Scripture</h2>
                         <p class="empty-description">
-                            Search for Bible verses by meaning, not just keywords. 
-                            Our semantic search understands context and finds relevant passages.
+                            Search by <strong>keyword</strong> (exact word match) or by <strong>meaning</strong> (semantic).
+                            Our AI automatically detects your intent and uses the best search method.
                         </p>
-                        <div class="suggestions">
-                            <p class="suggestions-title">Try searching for:</p>
-                            <div class="suggestion-chips">
-                                <span class="suggestion-chip" data-query="love your neighbor">love your neighbor</span>
-                                <span class="suggestion-chip" data-query="God's faithfulness">God's faithfulness</span>
-                                <span class="suggestion-chip" data-query="comfort in suffering">comfort in suffering</span>
-                                <span class="suggestion-chip" data-query="eternal life">eternal life</span>
-                                <span class="suggestion-chip" data-query="forgiveness of sins">forgiveness of sins</span>
+                            <div class="suggestions">
+                                <p class="suggestions-title">🧠 Semantic — search by meaning:</p>
+                                <div class="suggestion-chips">
+                                    <span class="suggestion-chip" data-query="사랑에 대한 말씀">사랑에 대한 말씀</span>
+                                    <span class="suggestion-chip" data-query="comfort in suffering">comfort in suffering</span>
+                                    <span class="suggestion-chip" data-query="God's faithfulness">God's faithfulness</span>
+                                    <span class="suggestion-chip" data-query="용서에 관한 구절">용서에 관한 구절</span>
+                                </div>
+                                <p class="suggestions-title" style="margin-top: 16px;">🔤 Keyword — find specific words:</p>
+                                <div class="suggestion-chips">
+                                    <span class="suggestion-chip" data-query="가사라는 지명이 나오는 구절">가사라는 지명</span>
+                                    <span class="suggestion-chip" data-query="모세가 등장하는 구절">모세가 등장하는</span>
+                                    <span class="suggestion-chip" data-query="다윗이라는 인물">다윗이라는 인물</span>
+                                    <span class="suggestion-chip" data-query="verses containing shepherd">containing shepherd</span>
+                                </div>
                             </div>
-                        </div>
                     </div>
                 `;
                 // Re-attach suggestion chip handlers

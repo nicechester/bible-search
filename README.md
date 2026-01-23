@@ -5,7 +5,8 @@ A **local-first semantic Bible search** application that uses AI embeddings for 
 ## Features
 
 ### Core Capabilities
-- **Semantic Search**: Find verses by meaning, not just keywords
+- **Intelligent Search with Intent Detection**: Automatically chooses the best search method
+- **Hybrid Search**: Combines keyword matching and semantic understanding
 - **Two-Stage Retrieval**: Fast candidate retrieval + precision re-ranking
 - **Multilingual Support**: Korean (KRV) and English (ASV) with cross-language understanding
 - **Zero Cost**: Runs entirely on local CPU using ONNX Runtime
@@ -14,7 +15,10 @@ A **local-first semantic Bible search** application that uses AI embeddings for 
 - **No Hallucinations**: Returns only actual Bible text, never AI-generated content
 
 ### Search Features
-- Natural language queries in **Korean** ("사랑", "믿음", "하나님의 사랑")
+- **🔤 Keyword Search**: Find exact word matches (e.g., `"가사"가 나오는 구절`)
+- **🧠 Semantic Search**: Find verses by meaning (e.g., "comfort in suffering")
+- **🔄 Hybrid Search**: Combines both methods for short queries
+- Natural language queries in **Korean** ("사랑에 대한 말씀", "모세가 등장하는 구절")
 - Natural language queries in **English** ("love your neighbor", "faith in hard times")
 - Adjustable relevance thresholds
 - Filter by Bible version (ASV/KRV)
@@ -23,7 +27,50 @@ A **local-first semantic Bible search** application that uses AI embeddings for 
 
 ## Architecture
 
-### Two-Stage Retrieval Pipeline
+### Intelligent Intent Detection
+
+The system automatically detects user intent and routes to the appropriate search method:
+
+```mermaid
+flowchart TD
+    subgraph Input["🔍 User Query"]
+        Q["User types a query"]
+    end
+
+    subgraph Detection["🎯 Intent Detection"]
+        D{"Analyze Query<br/>Patterns"}
+        K["🔤 KEYWORD<br/>Exact word match"]
+        S["🧠 SEMANTIC<br/>Meaning-based"]
+        H["🔄 HYBRID<br/>Both methods"]
+    end
+
+    subgraph Examples["Query Examples"]
+        E1["'가사라는 지명' → KEYWORD"]
+        E2["'사랑에 대한 말씀' → SEMANTIC"]
+        E3["'가사' (short) → HYBRID"]
+    end
+
+    Q --> D
+    D -->|"~라는/~가 나오는"| K
+    D -->|"~에 대한/about"| S
+    D -->|"Short query"| H
+
+    style Input fill:#1a1a2e,stroke:#d4a373,color:#fff
+    style Detection fill:#16213e,stroke:#58a6ff,color:#fff
+    style Examples fill:#0f3460,stroke:#a371f7,color:#fff
+```
+
+| Query Pattern | Detected Intent | Search Method |
+|---------------|-----------------|---------------|
+| `"가사"가 나오는 구절` | 🔤 KEYWORD | Exact text match for "가사" |
+| `가사라는 지명` | 🔤 KEYWORD | Extracts "가사" → exact match |
+| `모세가 등장하는` | 🔤 KEYWORD | Extracts "모세" → exact match |
+| `"quoted text"` | 🔤 KEYWORD | Quoted text → exact match |
+| `가사` (short query) | 🔄 HYBRID | Both keyword + semantic |
+| `사랑에 대한 말씀` | 🧠 SEMANTIC | Meaning-based search |
+| `comfort in suffering` | 🧠 SEMANTIC | Meaning-based search |
+
+### Two-Stage Retrieval Pipeline (Semantic Search)
 
 ```mermaid
 flowchart TD
@@ -224,7 +271,10 @@ Perform semantic search.
   ],
   "totalResults": 5,
   "searchTimeMs": 156,
-  "success": true
+  "success": true,
+  "searchMethod": "SEMANTIC",
+  "extractedKeyword": null,
+  "intentReason": "Natural language query: using semantic search"
 }
 ```
 
@@ -281,6 +331,7 @@ bible-search/
     │   ├── controller/
     │   │   └── SearchController.java      # REST API endpoints
     │   ├── model/
+    │   │   ├── SearchIntent.java          # Intent detection logic
     │   │   ├── SearchRequest.java         # API request model
     │   │   ├── SearchResponse.java        # API response model
     │   │   └── VerseResult.java           # Verse result with scores
@@ -302,42 +353,65 @@ bible-search/
 
 ## Search Query Examples
 
-The semantic search understands **meaning**, not just keywords. Here are examples of what works well:
+Bible Search intelligently detects your intent and uses the best search method automatically.
 
-### ✅ Recommended Query Types
+### 🔤 Keyword Search (Exact Match)
 
-#### 1. Single Words (단어 검색)
-| Query | Result | Score | Time |
-|-------|--------|-------|------|
-| `사랑` | 아가 1:2 "네 사랑이 포도주보다 나음이로구나" | 87% | 30ms |
-| `믿음` | 야고보서 2:24 "행함으로 의롭다 하심을 받고..." | 86% | 31ms |
-| `faith` | Romans 4:5 "his faith is reckoned for righteousness" | 70% | 32ms |
+Use keyword search when looking for a specific word, name, or place:
 
-#### 2. Short Phrases (짧은 구절)
-| Query | Result | Score | Time |
-|-------|--------|-------|------|
-| `하나님의 사랑` | 디도서 3:4 "하나님의 자비와 사람 사랑하심" | **92%** | 32ms |
-| `love your neighbor` | Matthew 22:39 "Thou shalt love thy neighbor as thyself" | 77% | 33ms |
-| `eternal life` | John 3:16 "should not perish, but have eternal life" | 75% | 31ms |
+| Query | Detected Intent | What It Does |
+|-------|-----------------|--------------|
+| `"가사"가 나오는 구절` | KEYWORD: "가사" | Finds verses containing "가사" (Gaza) |
+| `가사라는 지명` | KEYWORD: "가사" | Extracts and searches for "가사" |
+| `모세가 등장하는` | KEYWORD: "모세" | Finds verses mentioning Moses |
+| `"David" appears` | KEYWORD: "David" | Finds verses containing "David" |
+| `verses with the word love` | KEYWORD: "love" | Exact match for "love" |
 
-#### 3. Natural Language Questions (자연어 질문) ⭐ Best Results
-| Query | Result | Score | Time |
-|-------|--------|-------|------|
-| `예수님이 이웃을 사랑하라고 말씀하신 구절` | 마태복음 22:39 "네 이웃을 네 자신 같이 사랑하라" | **93%** | 31ms |
-| `힘든 시간에 하나님의 위로` | 시편 46:1 "환난 중에 만날 큰 도움이시라" | **95%** | 32ms |
-| `What does the Bible say about forgiving enemies?` | Matthew 5:44 "love your enemies, pray for them" | 85% | 33ms |
+### 🧠 Semantic Search (Meaning-Based)
 
-#### 4. Long Questions (긴 질문)
+Use semantic search for concepts, themes, and natural questions:
+
 | Query | Result | Score |
 |-------|--------|-------|
-| `슬픔을 극복하고 위로를 받을 수 있는 구절, 하나님께서 우리의 눈물을 닦아주신다는 말씀` | 마태복음 5:4 "애통하는 자는 복이 있나니 그들이 위로를 받을 것임이요" | 82% |
-| `죽음 이후의 영생과 부활에 대한 희망` | 고린도전서 15:42 "썩을 것으로 심고 썩지 아니할 것으로 다시 살아나며" | 88% |
+| `사랑에 대한 말씀` | 고린도전서 13:4 "사랑은 오래 참고..." | 92% |
+| `하나님의 사랑` | 디도서 3:4 "하나님의 자비와 사람 사랑하심" | 92% |
+| `love your neighbor` | Matthew 22:39 "Thou shalt love thy neighbor as thyself" | 77% |
+| `comfort in suffering` | Psalm 46:1 "God is our refuge and strength" | 85% |
+| `eternal life` | John 3:16 "should not perish, but have eternal life" | 75% |
 
-#### 5. Abstract Concepts (추상적 개념)
-| Query | Result | Score |
-|-------|--------|-------|
-| `God's faithfulness in difficult times` | Psalm 46:1 "God is our refuge and strength" | 85% |
-| `믿음과 행함의 관계` | 야고보서 2:22 "믿음이 그의 행함과 함께 일하고" | 86% |
+### 🔄 Hybrid Search (Both Methods)
+
+Short queries automatically use hybrid search:
+
+| Query | What Happens |
+|-------|-------------|
+| `가사` | Tries keyword match for "가사" + semantic search |
+| `Moses` | Tries keyword match + semantic meaning |
+| `믿음` | Keyword + semantic for "faith" concept |
+
+### ✅ Recommended Query Patterns
+
+#### For Finding Specific Words/Names:
+```
+"가사"가 나오는 구절          → Finds verses with "가사"
+모세라는 인물이 나오는         → Finds verses mentioning Moses
+다윗이 등장하는 구절           → Finds verses with David
+verses containing "shepherd"   → Exact match for "shepherd"
+```
+
+#### For Finding Themes/Concepts:
+```
+사랑에 대한 말씀              → About love (semantic)
+힘든 시간에 하나님의 위로       → Comfort in hard times
+God's faithfulness           → God's loyalty and trustworthiness
+forgiveness of sins          → About redemption and mercy
+```
+
+#### For Natural Language Questions:
+```
+예수님이 이웃을 사랑하라고 말씀하신 구절    → Matthew 22:39 (93%)
+What does the Bible say about forgiving enemies? → Matthew 5:44 (85%)
+```
 
 ### ⚠️ Limitations
 

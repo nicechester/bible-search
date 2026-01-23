@@ -355,7 +355,7 @@
                 <div class="logo-icon">📖</div>
                 <h1>Help Guide</h1>
             </a>
-            <p class="tagline">Learn how to search the Bible by meaning</p>
+            <p class="tagline">Learn how keyword, semantic, and hybrid search work</p>
         </header>
 
         <main>
@@ -363,115 +363,175 @@
             <section class="section">
                 <h2><span class="icon">✨</span> How It Works</h2>
                 <p>
-                    Bible Search uses <strong>semantic search</strong> powered by AI embeddings. 
-                    Unlike traditional keyword search, it understands the <em>meaning</em> behind your query 
-                    and finds verses that are conceptually related—even if they don't contain the exact words you typed.
-                </p>
-                <p>
-                    For example, searching for "courage in difficult times" will find verses about 
-                    strength, faith, and perseverance, not just verses containing the word "courage."
+                    Bible Search uses <strong>intelligent intent detection</strong> to automatically choose 
+                    the best search method for your query. It can find verses by exact word match OR by meaning.
                 </p>
 
                 <div class="feature-grid">
                     <div class="feature-item">
+                        <div class="feature-icon">🔤</div>
+                        <div class="feature-title">Keyword Search</div>
+                        <div class="feature-desc">Exact word match for names, places</div>
+                    </div>
+                    <div class="feature-item">
                         <div class="feature-icon">🧠</div>
-                        <div class="feature-title">Semantic Understanding</div>
-                        <div class="feature-desc">Finds verses by meaning, not keywords</div>
+                        <div class="feature-title">Semantic Search</div>
+                        <div class="feature-desc">Finds verses by meaning</div>
                     </div>
                     <div class="feature-item">
-                        <div class="feature-icon">⚡</div>
-                        <div class="feature-title">Instant Results</div>
-                        <div class="feature-desc">100% local, zero latency</div>
+                        <div class="feature-icon">🔄</div>
+                        <div class="feature-title">Hybrid Search</div>
+                        <div class="feature-desc">Combines both methods</div>
                     </div>
                     <div class="feature-item">
-                        <div class="feature-icon">🌍</div>
-                        <div class="feature-title">Multilingual</div>
-                        <div class="feature-desc">Search in English or Korean</div>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">🔒</div>
-                        <div class="feature-title">Private</div>
-                        <div class="feature-desc">All processing happens locally</div>
+                        <div class="feature-icon">🎯</div>
+                        <div class="feature-title">Auto Detection</div>
+                        <div class="feature-desc">Picks the best method for you</div>
                     </div>
                 </div>
+            </section>
+
+            <!-- Search Modes -->
+            <section class="section">
+                <h2><span class="icon">🎯</span> Three Search Modes</h2>
+                
+                <ul class="tips-list">
+                    <li>
+                        <span class="tip-icon">🔤</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Keyword Search — For specific words, names, places</div>
+                            <div class="tip-description">
+                                Triggered by patterns like <code>"가사"가 나오는</code>, <code>~라는 지명</code>, 
+                                <code>~가 등장하는</code>, or quoted text. Finds exact word matches.
+                                <br><br>
+                                <strong>Examples:</strong> <code>"가사"가 나오는 구절</code>, <code>모세라는 인물</code>, 
+                                <code>다윗이 등장하는</code>, <code>verses with "shepherd"</code>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon">🧠</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Semantic Search — For concepts, themes, questions</div>
+                            <div class="tip-description">
+                                Triggered by patterns like <code>~에 대한</code>, <code>about ~</code>, or natural language questions.
+                                Understands meaning and finds conceptually related verses.
+                                <br><br>
+                                <strong>Examples:</strong> <code>사랑에 대한 말씀</code>, <code>comfort in suffering</code>, 
+                                <code>God's faithfulness</code>, <code>용서에 관한 구절</code>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="tip-icon">🔄</span>
+                        <div class="tip-content">
+                            <div class="tip-title">Hybrid Search — For short queries</div>
+                            <div class="tip-description">
+                                Short 1-2 word queries automatically use both methods.
+                                First tries exact keyword match, then adds semantic results.
+                                <br><br>
+                                <strong>Examples:</strong> <code>가사</code>, <code>Moses</code>, <code>믿음</code>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
             </section>
 
             <!-- Example Searches -->
             <section class="section">
                 <h2><span class="icon">🔍</span> Example Searches</h2>
-                <p>Try these example searches to discover how semantic search works:</p>
+                <p>Try these examples to see how different search modes work:</p>
 
+                <h3 style="color: var(--accent-green); margin: 24px 0 16px; font-size: 1.1rem;">🔤 Keyword Search — Find specific words</h3>
                 <div class="example-grid">
-                    <div class="example-card" onclick="window.location.href='/?q=love+your+neighbor'">
-                        <div class="example-category">Relationships</div>
-                        <div class="example-query">love your neighbor</div>
-                        <div class="example-description">Find verses about loving others, compassion, and treating people well</div>
+                    <div class="example-card" onclick="window.location.href='/?q=가사라는+지명이+나오는+구절'">
+                        <div class="example-category">Place Name (Korean)</div>
+                        <div class="example-query">가사라는 지명이 나오는 구절</div>
+                        <div class="example-description">Find verses containing "가사" (Gaza)</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=모세가+등장하는+구절'">
+                        <div class="example-category">Person Name (Korean)</div>
+                        <div class="example-query">모세가 등장하는 구절</div>
+                        <div class="example-description">Find verses mentioning Moses</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=다윗이라는+인물'">
+                        <div class="example-category">Person Name (Korean)</div>
+                        <div class="example-query">다윗이라는 인물</div>
+                        <div class="example-description">Find verses mentioning David</div>
+                    </div>
+
+                    <div class="example-card" onclick="window.location.href='/?q=verses+containing+shepherd'">
+                        <div class="example-category">Keyword (English)</div>
+                        <div class="example-query">verses containing shepherd</div>
+                        <div class="example-description">Find verses with the word "shepherd"</div>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent-blue); margin: 24px 0 16px; font-size: 1.1rem;">🧠 Semantic Search — Find by meaning</h3>
+                <div class="example-grid">
+                    <div class="example-card" onclick="window.location.href='/?q=사랑에+대한+말씀'">
+                        <div class="example-category">Concept (Korean)</div>
+                        <div class="example-query">사랑에 대한 말씀</div>
+                        <div class="example-description">Find verses about love (by meaning)</div>
                     </div>
 
                     <div class="example-card" onclick="window.location.href='/?q=comfort+in+suffering'">
-                        <div class="example-category">Comfort</div>
+                        <div class="example-category">Theme (English)</div>
                         <div class="example-query">comfort in suffering</div>
-                        <div class="example-description">Discover passages about God's comfort during trials and tribulation</div>
+                        <div class="example-description">Discover passages about God's comfort during trials</div>
                     </div>
 
                     <div class="example-card" onclick="window.location.href='/?q=God%27s+faithfulness'">
                         <div class="example-category">God's Character</div>
                         <div class="example-query">God's faithfulness</div>
-                        <div class="example-description">Explore verses about God's unwavering loyalty and trustworthiness</div>
+                        <div class="example-description">Explore verses about God's unwavering loyalty</div>
                     </div>
 
-                    <div class="example-card" onclick="window.location.href='/?q=forgiveness+of+sins'">
-                        <div class="example-category">Salvation</div>
-                        <div class="example-query">forgiveness of sins</div>
-                        <div class="example-description">Find passages about redemption, mercy, and being forgiven</div>
+                    <div class="example-card" onclick="window.location.href='/?q=용서에+관한+구절'">
+                        <div class="example-category">Concept (Korean)</div>
+                        <div class="example-query">용서에 관한 구절</div>
+                        <div class="example-description">Find passages about forgiveness</div>
                     </div>
 
                     <div class="example-card" onclick="window.location.href='/?q=eternal+life'">
-                        <div class="example-category">Eternal Hope</div>
+                        <div class="example-category">Salvation</div>
                         <div class="example-query">eternal life</div>
-                        <div class="example-description">Discover what the Bible says about everlasting life and salvation</div>
+                        <div class="example-description">What the Bible says about everlasting life</div>
                     </div>
 
-                    <div class="example-card" onclick="window.location.href='/?q=fear+and+anxiety'">
-                        <div class="example-category">Emotional Support</div>
-                        <div class="example-query">fear and anxiety</div>
-                        <div class="example-description">Find verses that address worry, fear, and finding peace</div>
+                    <div class="example-card" onclick="window.location.href='/?q=힘든+시간에+위로'">
+                        <div class="example-category">Comfort (Korean)</div>
+                        <div class="example-query">힘든 시간에 위로</div>
+                        <div class="example-description">Comfort in difficult times</div>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--accent-purple); margin: 24px 0 16px; font-size: 1.1rem;">🔄 Hybrid Search — Short queries</h3>
+                <div class="example-grid">
+                    <div class="example-card" onclick="window.location.href='/?q=가사'">
+                        <div class="example-category">Short Query (Korean)</div>
+                        <div class="example-query">가사</div>
+                        <div class="example-description">Tries keyword match + semantic search</div>
                     </div>
 
-                    <div class="example-card" onclick="window.location.href='/?q=wisdom+for+decisions'">
-                        <div class="example-category">Guidance</div>
-                        <div class="example-query">wisdom for decisions</div>
-                        <div class="example-description">Explore passages about seeking wisdom and divine guidance</div>
+                    <div class="example-card" onclick="window.location.href='/?q=Moses'">
+                        <div class="example-category">Short Query (English)</div>
+                        <div class="example-query">Moses</div>
+                        <div class="example-description">Tries keyword match + semantic search</div>
                     </div>
 
-                    <div class="example-card" onclick="window.location.href='/?q=창조의+아름다움'">
-                        <div class="example-category">Korean Search</div>
-                        <div class="example-query">창조의 아름다움</div>
-                        <div class="example-description">Search in Korean: "beauty of creation"</div>
+                    <div class="example-card" onclick="window.location.href='/?q=믿음'">
+                        <div class="example-category">Single Word (Korean)</div>
+                        <div class="example-query">믿음</div>
+                        <div class="example-description">Faith — both methods combined</div>
                     </div>
 
-                    <div class="example-card" onclick="window.location.href='/?q=giving+generously'">
-                        <div class="example-category">Stewardship</div>
-                        <div class="example-query">giving generously</div>
-                        <div class="example-description">Find verses about generosity, tithing, and helping others</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=strength+in+weakness'">
-                        <div class="example-category">Faith</div>
-                        <div class="example-query">strength in weakness</div>
-                        <div class="example-description">Discover how God's power works through human weakness</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=finding+purpose+in+life'">
-                        <div class="example-category">Purpose</div>
-                        <div class="example-query">finding purpose in life</div>
-                        <div class="example-description">Explore what the Bible says about meaning and calling</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=patience+and+waiting'">
-                        <div class="example-category">Character</div>
-                        <div class="example-query">patience and waiting</div>
-                        <div class="example-description">Find passages about waiting on God and developing patience</div>
+                    <div class="example-card" onclick="window.location.href='/?q=shepherd'">
+                        <div class="example-category">Single Word (English)</div>
+                        <div class="example-query">shepherd</div>
+                        <div class="example-description">Shepherd — keyword + meaning</div>
                     </div>
                 </div>
             </section>

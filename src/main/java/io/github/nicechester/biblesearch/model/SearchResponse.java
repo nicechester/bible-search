@@ -9,7 +9,7 @@ import java.util.List;
  * Response model for Bible search results.
  */
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class SearchResponse {
     
     /**
@@ -43,6 +43,21 @@ public class SearchResponse {
     private String error;
     
     /**
+     * The detected search intent type: KEYWORD, SEMANTIC, or HYBRID
+     */
+    private String searchMethod;
+    
+    /**
+     * Extracted keyword if keyword search was used
+     */
+    private String extractedKeyword;
+    
+    /**
+     * Explanation of why this search method was chosen
+     */
+    private String intentReason;
+    
+    /**
      * Create a successful response
      */
     public static SearchResponse success(String query, List<VerseResult> results, long searchTimeMs) {
@@ -52,6 +67,23 @@ public class SearchResponse {
             .totalResults(results.size())
             .searchTimeMs(searchTimeMs)
             .success(true)
+            .build();
+    }
+    
+    /**
+     * Create a successful response with intent info
+     */
+    public static SearchResponse success(String query, List<VerseResult> results, long searchTimeMs, 
+                                         SearchIntent intent) {
+        return SearchResponse.builder()
+            .query(query)
+            .results(results)
+            .totalResults(results.size())
+            .searchTimeMs(searchTimeMs)
+            .success(true)
+            .searchMethod(intent.type().name())
+            .extractedKeyword(intent.extractedKeyword())
+            .intentReason(intent.reason())
             .build();
     }
     

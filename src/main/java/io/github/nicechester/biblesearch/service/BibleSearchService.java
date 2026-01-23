@@ -6,6 +6,8 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import io.github.nicechester.biblesearch.model.SearchIntent;
+import io.github.nicechester.biblesearch.model.SearchIntent.IntentType;
 import io.github.nicechester.biblesearch.model.SearchResponse;
 import io.github.nicechester.biblesearch.model.VerseResult;
 import io.github.nicechester.biblesearch.service.BibleDataService.VerseData;
@@ -93,7 +95,8 @@ public class BibleSearchService {
     }
 
     /**
-     * Perform semantic search with two-stage retrieval.
+     * Perform search with automatic intent detection.
+     * Routes to keyword search, semantic search, or hybrid based on query analysis.
      */
     public SearchResponse search(String query, Integer maxResults, Double minScoreThreshold, String versionFilter) {
         long startTime = System.currentTimeMillis();
@@ -102,30 +105,127 @@ public class BibleSearchService {
             int resultsToReturn = maxResults != null ? maxResults : resultCount;
             double threshold = minScoreThreshold != null ? minScoreThreshold : minScore;
 
-            // Stage 1: Bi-Encoder Candidate Retrieval
-            log.debug("Stage 1: Retrieving candidates for query: {}", query);
-            List<ScoredVerse> candidates = retrieveCandidates(query, candidateCount);
+            // Detect user intent
+            SearchIntent intent = SearchIntent.detect(query);
+            log.info("Detected intent: {} for query '{}' (keyword: {})", 
+                     intent.type(), query, intent.extractedKeyword());
 
-            if (candidates.isEmpty()) {
-                log.debug("No candidates found for query: {}", query);
-                return SearchResponse.success(query, List.of(), System.currentTimeMillis() - startTime);
+            List<VerseResult> results;
+
+            switch (intent.type()) {
+                case KEYWORD:
+                    results = performKeywordSearch(intent.extractedKeyword(), versionFilter, resultsToReturn);
+                    break;
+                case HYBRID:
+                    results = performHybridSearch(query, intent.extractedKeyword(), threshold, versionFilter, resultsToReturn);
+                    break;
+                case SEMANTIC:
+                default:
+                    results = performSemanticSearch(query, threshold, versionFilter, resultsToReturn);
+                    break;
             }
 
-            log.debug("Stage 1 complete: {} candidates found", candidates.size());
-
-            // Stage 2: Re-ranking and Filtering
-            log.debug("Stage 2: Re-ranking {} candidates", candidates.size());
-            List<VerseResult> results = rerankAndFilter(candidates, query, threshold, versionFilter, resultsToReturn);
-
             long searchTime = System.currentTimeMillis() - startTime;
-            log.info("Search completed in {}ms: '{}' -> {} results", searchTime, query, results.size());
+            log.info("Search completed in {}ms: '{}' [{}] -> {} results", 
+                     searchTime, query, intent.type(), results.size());
 
-            return SearchResponse.success(query, results, searchTime);
+            return SearchResponse.success(query, results, searchTime, intent);
 
         } catch (Exception e) {
             log.error("Search failed for query: {}", query, e);
             return SearchResponse.error(query, e.getMessage());
         }
+    }
+
+    /**
+     * Perform keyword-only search (exact text match).
+     */
+    private List<VerseResult> performKeywordSearch(String keyword, String versionFilter, int maxResults) {
+        log.debug("Performing keyword search for: {}", keyword);
+        
+        List<VerseData> matches = bibleDataService.searchByKeyword(keyword);
+        
+        return matches.stream()
+            .filter(v -> matchesVersion(v.getVersion(), versionFilter))
+            .limit(maxResults)
+            .map(v -> bibleDataService.toVerseResult(v, 1.0)
+                .toBuilder()
+                .rerankedScore(1.0)  // Exact match = perfect score
+                .build())
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Perform hybrid search: combines keyword and semantic results.
+     */
+    private List<VerseResult> performHybridSearch(String query, String keyword, double threshold, 
+                                                   String versionFilter, int maxResults) {
+        log.debug("Performing hybrid search: keyword='{}', query='{}'", keyword, query);
+        
+        // Get keyword matches first (these are exact matches, high priority)
+        List<VerseData> keywordMatches = bibleDataService.searchByKeyword(keyword);
+        Set<String> keywordMatchKeys = keywordMatches.stream()
+            .map(VerseData::getKey)
+            .collect(Collectors.toSet());
+        
+        // Get semantic matches
+        List<ScoredVerse> semanticCandidates = retrieveCandidates(query, candidateCount);
+        
+        // Build result list: keyword matches first, then semantic matches that aren't duplicates
+        List<VerseResult> results = new ArrayList<>();
+        
+        // Add keyword matches with boosted score
+        keywordMatches.stream()
+            .filter(v -> matchesVersion(v.getVersion(), versionFilter))
+            .limit(maxResults)
+            .forEach(v -> results.add(
+                bibleDataService.toVerseResult(v, 1.0)
+                    .toBuilder()
+                    .rerankedScore(1.0)
+                    .build()
+            ));
+        
+        // Add semantic matches that aren't already in keyword results
+        if (results.size() < maxResults) {
+            String[] queryWords = query.toLowerCase().split("\\s+");
+            
+            semanticCandidates.stream()
+                .filter(sv -> !keywordMatchKeys.contains(sv.verse.getKey()))
+                .filter(sv -> matchesVersion(sv.verse.getVersion(), versionFilter))
+                .map(sv -> {
+                    double rerankedScore = calculateRerankedScore(sv, queryWords);
+                    return new ScoredVerse(sv.verse, sv.score, rerankedScore);
+                })
+                .filter(sv -> sv.rerankedScore >= threshold)
+                .sorted((a, b) -> Double.compare(b.rerankedScore, a.rerankedScore))
+                .limit(maxResults - results.size())
+                .forEach(sv -> results.add(
+                    bibleDataService.toVerseResult(sv.verse, sv.score)
+                        .toBuilder()
+                        .rerankedScore(sv.rerankedScore)
+                        .build()
+                ));
+        }
+        
+        return results;
+    }
+
+    /**
+     * Perform semantic-only search (original two-stage retrieval).
+     */
+    private List<VerseResult> performSemanticSearch(String query, double threshold, 
+                                                     String versionFilter, int maxResults) {
+        log.debug("Performing semantic search for: {}", query);
+        
+        // Stage 1: Bi-Encoder Candidate Retrieval
+        List<ScoredVerse> candidates = retrieveCandidates(query, candidateCount);
+
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+
+        // Stage 2: Re-ranking and Filtering
+        return rerankAndFilter(candidates, query, threshold, versionFilter, maxResults);
     }
 
     /**
