@@ -27,9 +27,9 @@ A **local-first semantic Bible search** application that uses AI embeddings for 
 
 ## Architecture
 
-### Intelligent Intent Detection
+### Intelligent Intent Detection (Embedding-Based)
 
-The system automatically detects user intent and routes to the appropriate search method:
+The system uses **embedding similarity** to classify user intent — not rigid regex patterns. This is essentially "few-shot classification" using the same multilingual model.
 
 ```mermaid
 flowchart TD
@@ -37,28 +37,38 @@ flowchart TD
         Q["User types a query"]
     end
 
-    subgraph Detection["🎯 Intent Detection"]
-        D{"Analyze Query<br/>Patterns"}
-        K["🔤 KEYWORD<br/>Exact word match"]
-        S["🧠 SEMANTIC<br/>Meaning-based"]
-        H["🔄 HYBRID<br/>Both methods"]
+    subgraph Classification["🎯 Embedding-Based Classification"]
+        E["Embed Query<br/>(384 dimensions)"]
+        K["Compare to<br/>KEYWORD prototypes"]
+        S["Compare to<br/>SEMANTIC prototypes"]
+        D{"Which has<br/>higher similarity?"}
     end
 
-    subgraph Examples["Query Examples"]
-        E1["'가사라는 지명' → KEYWORD"]
-        E2["'사랑에 대한 말씀' → SEMANTIC"]
-        E3["'가사' (short) → HYBRID"]
+    subgraph Output["Search Method"]
+        KW["🔤 KEYWORD<br/>Exact word match"]
+        SM["🧠 SEMANTIC<br/>Meaning-based"]
+        HY["🔄 HYBRID<br/>Both methods"]
     end
 
-    Q --> D
-    D -->|"~라는/~가 나오는"| K
-    D -->|"~에 대한/about"| S
-    D -->|"Short query"| H
+    Q --> E
+    E --> K
+    E --> S
+    K --> D
+    S --> D
+    D -->|"keyword > semantic"| KW
+    D -->|"semantic > keyword"| SM
+    D -->|"ambiguous/short"| HY
 
     style Input fill:#1a1a2e,stroke:#d4a373,color:#fff
-    style Detection fill:#16213e,stroke:#58a6ff,color:#fff
-    style Examples fill:#0f3460,stroke:#a371f7,color:#fff
+    style Classification fill:#16213e,stroke:#58a6ff,color:#fff
+    style Output fill:#0f3460,stroke:#a371f7,color:#fff
 ```
+
+**How it works:**
+1. Pre-compute embeddings for 20 **keyword prototypes** (e.g., "가사라는 지명이 나오는 구절", "verses containing shepherd")
+2. Pre-compute embeddings for 20 **semantic prototypes** (e.g., "사랑에 대한 말씀", "comfort in suffering")
+3. At query time, embed the user's query and compare to both prototype sets
+4. Route to the search method with higher average similarity
 
 | Query Pattern | Detected Intent | Search Method |
 |---------------|-----------------|---------------|
@@ -337,7 +347,8 @@ bible-search/
     │   │   └── VerseResult.java           # Verse result with scores
     │   └── service/
     │       ├── BibleDataService.java      # Bible JSON loading
-    │       └── BibleSearchService.java    # Two-stage retrieval logic
+    │       ├── BibleSearchService.java    # Hybrid search logic
+    │       └── IntentClassifierService.java # Embedding-based intent detection
     └── resources/
         ├── application.yml
         ├── bible/

@@ -363,8 +363,9 @@
             <section class="section">
                 <h2><span class="icon">✨</span> How It Works</h2>
                 <p>
-                    Bible Search uses <strong>intelligent intent detection</strong> to automatically choose 
-                    the best search method for your query. It can find verses by exact word match OR by meaning.
+                    Bible Search uses <strong>AI-powered intent classification</strong> to automatically choose 
+                    the best search method for your query. Instead of rigid keyword matching, the system uses 
+                    the same multilingual embedding model to understand what you're looking for.
                 </p>
 
                 <div class="feature-grid">
@@ -385,10 +386,16 @@
                     </div>
                     <div class="feature-item">
                         <div class="feature-icon">🎯</div>
-                        <div class="feature-title">Auto Detection</div>
-                        <div class="feature-desc">Picks the best method for you</div>
+                        <div class="feature-title">AI Classification</div>
+                        <div class="feature-desc">Embedding-based intent detection</div>
                     </div>
                 </div>
+
+                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
+                    <strong>How intent detection works:</strong> Your query is compared to prototype phrases 
+                    for each search type using embedding similarity. For example, "가사라는 지명" is more similar 
+                    to keyword prototypes, while "사랑에 대한 말씀" is more similar to semantic prototypes.
+                </p>
             </section>
 
             <!-- Search Modes -->

@@ -43,6 +43,7 @@ public class BibleSearchService {
     private final EmbeddingModel embeddingModel;
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final BibleDataService bibleDataService;
+    private final IntentClassifierService intentClassifier;
 
     @Value("${bible.search.candidate-count:50}")
     private int candidateCount;
@@ -105,10 +106,10 @@ public class BibleSearchService {
             int resultsToReturn = maxResults != null ? maxResults : resultCount;
             double threshold = minScoreThreshold != null ? minScoreThreshold : minScore;
 
-            // Detect user intent
-            SearchIntent intent = SearchIntent.detect(query);
-            log.info("Detected intent: {} for query '{}' (keyword: {})", 
-                     intent.type(), query, intent.extractedKeyword());
+            // Classify user intent using embeddings
+            SearchIntent intent = intentClassifier.classify(query);
+            log.info("Classified intent: {} for query '{}' (keyword: {}) - {}", 
+                     intent.type(), query, intent.extractedKeyword(), intent.reason());
 
             List<VerseResult> results;
 
@@ -395,6 +396,7 @@ public class BibleSearchService {
         stats.put("candidateCount", candidateCount);
         stats.put("resultCount", resultCount);
         stats.put("minScore", minScore);
+        stats.put("intentClassifier", intentClassifier.getStats());
         stats.putAll(bibleDataService.getStatistics());
         return stats;
     }
