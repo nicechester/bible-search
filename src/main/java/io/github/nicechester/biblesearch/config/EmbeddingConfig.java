@@ -1,5 +1,9 @@
 package io.github.nicechester.biblesearch.config;
 
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.OnnxEmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.PoolingMode;
@@ -14,6 +18,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -26,6 +31,10 @@ import java.nio.file.StandardCopyOption;
  * - Supports 50+ languages including Korean
  * - 384-dimensional embeddings
  * - ONNX Runtime for local CPU inference
+ * 
+ * GCS Persistence:
+ * - If enabled, tries to load pre-computed embeddings from GCS
+ * - Dramatically reduces cold start time (seconds vs minutes)
  */
 @Slf4j
 @Configuration
@@ -38,6 +47,18 @@ public class EmbeddingConfig {
 
     @Value("${bible.embedding.tokenizer-path:classpath:models/multilingual-minilm/tokenizer.json}")
     private String tokenizerPath;
+
+    @Value("${bible.embedding.gcs.enabled:false}")
+    private boolean gcsEnabled;
+
+    @Value("${bible.embedding.gcs.bucket:}")
+    private String gcsBucket;
+
+    @Value("${bible.embedding.gcs.blob-name:embeddings/bible-embeddings.json}")
+    private String gcsBlobName;
+
+    // Track if store was loaded from GCS (used by stats)
+    private boolean loadedFromGcs = false;
 
     public EmbeddingConfig(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -98,11 +119,58 @@ public class EmbeddingConfig {
 
     /**
      * In-memory embedding store for Bible verse vectors.
-     * Stores pre-computed embeddings for fast similarity search.
+     * If GCS is enabled, tries to load pre-computed embeddings from GCS first.
      */
     @Bean
     public EmbeddingStore<TextSegment> embeddingStore() {
-        log.info("Initializing in-memory embedding store");
+        // Try to load from GCS if enabled
+        if (gcsEnabled && gcsBucket != null && !gcsBucket.isBlank()) {
+            EmbeddingStore<TextSegment> loadedStore = tryLoadFromGcs();
+            if (loadedStore != null) {
+                loadedFromGcs = true;
+                return loadedStore;
+            }
+        }
+        
+        log.info("Initializing empty in-memory embedding store (will generate embeddings)");
         return new InMemoryEmbeddingStore<>();
+    }
+
+    /**
+     * Try to load embedding store from GCS.
+     */
+    private EmbeddingStore<TextSegment> tryLoadFromGcs() {
+        try {
+            log.info("Checking GCS for pre-computed embeddings: gs://{}/{}", gcsBucket, gcsBlobName);
+            
+            Storage storage = StorageOptions.getDefaultInstance().getService();
+            Blob blob = storage.get(BlobId.of(gcsBucket, gcsBlobName));
+            
+            if (blob == null || !blob.exists()) {
+                log.info("No embeddings found in GCS");
+                return null;
+            }
+            
+            log.info("Loading embeddings from GCS...");
+            long startTime = System.currentTimeMillis();
+            
+            byte[] content = blob.getContent();
+            String json = new String(content, StandardCharsets.UTF_8);
+            
+            InMemoryEmbeddingStore<TextSegment> store = InMemoryEmbeddingStore.fromJson(json);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("Loaded embeddings from GCS in {}ms ({} MB)", 
+                    duration, content.length / 1024 / 1024);
+            
+            return store;
+        } catch (Exception e) {
+            log.warn("Failed to load embeddings from GCS: {} - will generate instead", e.getMessage());
+            return null;
+        }
+    }
+
+    public boolean isLoadedFromGcs() {
+        return loadedFromGcs;
     }
 }

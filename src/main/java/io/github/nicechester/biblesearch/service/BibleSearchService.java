@@ -44,6 +44,7 @@ public class BibleSearchService {
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final BibleDataService bibleDataService;
     private final IntentClassifierService intentClassifier;
+    private final EmbeddingStoreService embeddingStoreService;
 
     @Value("${bible.search.candidate-count:50}")
     private int candidateCount;
@@ -56,10 +57,13 @@ public class BibleSearchService {
 
     // Map from embedding store segment to verse key for fast lookup
     private final Map<String, String> segmentToVerseKey = new HashMap<>();
+    
+    // Flag to track if embeddings were loaded from GCS
+    private boolean loadedFromGcs = false;
 
     @PostConstruct
     public void initializeEmbeddings() {
-        log.info("Indexing Bible verses into embedding store...");
+        log.info("Initializing Bible verse embeddings...");
         long startTime = System.currentTimeMillis();
 
         List<VerseData> verses = bibleDataService.getAllVerses();
@@ -68,6 +72,55 @@ public class BibleSearchService {
             return;
         }
 
+        // Check if embeddings were already loaded from GCS by EmbeddingConfig
+        // We can detect this by checking if the store already has entries
+        boolean storeHasEntries = checkStoreHasEntries();
+        
+        if (storeHasEntries) {
+            // Store was loaded from GCS - just build the lookup map
+            log.info("Embeddings already loaded (from GCS), building lookup map...");
+            buildLookupMap(verses);
+            loadedFromGcs = true;
+        } else {
+            // Generate embeddings from scratch
+            generateAndIndexEmbeddings(verses);
+        }
+
+        long duration = System.currentTimeMillis() - startTime;
+        log.info("Embedding initialization completed in {}ms ({} verses)", duration, segmentToVerseKey.size());
+    }
+
+    /**
+     * Check if the embedding store already has entries (loaded from GCS).
+     */
+    private boolean checkStoreHasEntries() {
+        try {
+            // Try a dummy search to see if store has entries
+            Embedding dummyEmbedding = embeddingModel.embed("test").content();
+            var result = embeddingStore.search(EmbeddingSearchRequest.builder()
+                    .queryEmbedding(dummyEmbedding)
+                    .maxResults(1)
+                    .build());
+            return !result.matches().isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Build the lookup map from verses (when embeddings are already loaded).
+     */
+    private void buildLookupMap(List<VerseData> verses) {
+        for (VerseData verse : verses) {
+            String embeddingText = verse.toEmbeddingText();
+            segmentToVerseKey.put(embeddingText, verse.getKey());
+        }
+    }
+
+    /**
+     * Generate embeddings for all verses and optionally save to GCS.
+     */
+    private void generateAndIndexEmbeddings(List<VerseData> verses) {
         // Create text segments and embeddings for each verse
         List<TextSegment> segments = new ArrayList<>();
         List<String> verseKeys = new ArrayList<>();
@@ -80,19 +133,24 @@ public class BibleSearchService {
         }
 
         // Generate embeddings in batches
-        log.info("Generating embeddings for {} verses...", segments.size());
+        log.info("Generating embeddings for {} verses (this may take a few minutes)...", segments.size());
         List<Embedding> embeddings = embeddingModel.embedAll(segments).content();
 
         // Store embeddings and build lookup map
         for (int i = 0; i < segments.size(); i++) {
             TextSegment segment = segments.get(i);
             Embedding embedding = embeddings.get(i);
-            String segmentId = embeddingStore.add(embedding, segment);
+            embeddingStore.add(embedding, segment);
             segmentToVerseKey.put(segment.text(), verseKeys.get(i));
         }
 
-        long duration = System.currentTimeMillis() - startTime;
-        log.info("Indexed {} verses in {}ms", segments.size(), duration);
+        log.info("Indexed {} verses into embedding store", segments.size());
+
+        // Save to GCS for future fast loading
+        if (embeddingStoreService.isEnabled()) {
+            log.info("Saving embeddings to GCS for future fast startup...");
+            embeddingStoreService.saveToGcs(embeddingStore);
+        }
     }
 
     /**
@@ -397,6 +455,9 @@ public class BibleSearchService {
         stats.put("resultCount", resultCount);
         stats.put("minScore", minScore);
         stats.put("intentClassifier", intentClassifier.getStats());
+        stats.put("gcsEnabled", embeddingStoreService.isEnabled());
+        stats.put("gcsPath", embeddingStoreService.getGcsPath());
+        stats.put("loadedFromGcs", loadedFromGcs);
         stats.putAll(bibleDataService.getStatistics());
         return stats;
     }

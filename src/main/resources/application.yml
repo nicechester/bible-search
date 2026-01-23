@@ -14,6 +14,11 @@ bible:
     tokenizer-path: ${EMBEDDING_TOKENIZER_PATH:classpath:models/multilingual-minilm/tokenizer.json}
     chunk-size: 500
     chunk-overlap: 50
+    # GCS persistence for faster cold starts
+    gcs:
+      enabled: ${EMBEDDING_GCS_ENABLED:false}
+      bucket: ${EMBEDDING_GCS_BUCKET:}
+      blob-name: ${EMBEDDING_GCS_BLOB:embeddings/bible-embeddings.json}
   
   # Search configuration
   search:

@@ -26,6 +26,11 @@ spec:
           env:
             - name: JAVA_OPTS
               value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+            # GCS embedding store for faster cold starts
+            - name: EMBEDDING_GCS_ENABLED
+              value: "true"
+            - name: EMBEDDING_GCS_BUCKET
+              value: "bible-ai-485118-embeddings"
           # Startup probe - waits for app to be ready (up to 10 minutes)
           startupProbe:
             httpGet:
