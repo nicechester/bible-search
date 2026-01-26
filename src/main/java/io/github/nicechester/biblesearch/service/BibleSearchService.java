@@ -6,6 +6,7 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import io.github.nicechester.biblesearch.model.ContextResult;
 import io.github.nicechester.biblesearch.model.SearchIntent;
 import io.github.nicechester.biblesearch.model.SearchIntent.IntentType;
 import io.github.nicechester.biblesearch.model.SearchResponse;
@@ -44,6 +45,7 @@ public class BibleSearchService {
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final BibleDataService bibleDataService;
     private final IntentClassifierService intentClassifier;
+    private final ContextClassifierService contextClassifier;
     private final EmbeddingStoreService embeddingStoreService;
 
     @Value("${bible.search.candidate-count:50}")
@@ -154,8 +156,14 @@ public class BibleSearchService {
     }
 
     /**
-     * Perform search with automatic intent detection.
-     * Routes to keyword search, semantic search, or hybrid based on query analysis.
+     * Perform search with automatic intent detection and context extraction.
+     * 
+     * <p>Flow:
+     * <ol>
+     *   <li>Extract context (book scope) from query using ContextClassifierService</li>
+     *   <li>Classify intent (keyword/semantic/hybrid) using cleaned query</li>
+     *   <li>Perform search with context filtering</li>
+     * </ol>
      */
     public SearchResponse search(String query, Integer maxResults, Double minScoreThreshold, String versionFilter) {
         long startTime = System.currentTimeMillis();
@@ -164,31 +172,51 @@ public class BibleSearchService {
             int resultsToReturn = maxResults != null ? maxResults : resultCount;
             double threshold = minScoreThreshold != null ? minScoreThreshold : minScore;
 
-            // Classify user intent using embeddings
-            SearchIntent intent = intentClassifier.classify(query);
+            // Step 1: Extract context (book scope) from query
+            ContextResult context = contextClassifier.extract(query);
+            String searchQuery = context.getSearchQuery();
+            
+            log.info("Context extracted: {} -> '{}' (type: {}, books: {})", 
+                     query, searchQuery, context.contextType(), 
+                     context.bookShorts() != null ? context.bookShorts() : "all");
+
+            // Step 2: Classify user intent using the cleaned query
+            SearchIntent intent = intentClassifier.classify(searchQuery);
+            String extractedKeyword = intent.extractedKeyword();
             log.info("Classified intent: {} for query '{}' (keyword: {}) - {}", 
-                     intent.type(), query, intent.extractedKeyword(), intent.reason());
+                     intent.type(), searchQuery, extractedKeyword != null ? extractedKeyword : "<query>", intent.reason());
 
             List<VerseResult> results;
 
+            // Step 3: Perform search with context filtering
+            // Handle null keyword case: fall back to using searchQuery as keyword or semantic search
+            String keyword = intent.extractedKeyword();
+            if (keyword == null || keyword.isBlank()) {
+                // No keyword extracted - use the search query itself for keyword search,
+                // or fall back to semantic for better results
+                keyword = searchQuery;
+                log.debug("No keyword extracted, using searchQuery as keyword: '{}'", keyword);
+            }
+            
             switch (intent.type()) {
                 case KEYWORD:
-                    results = performKeywordSearch(intent.extractedKeyword(), versionFilter, resultsToReturn);
+                    results = performKeywordSearch(keyword, versionFilter, context, resultsToReturn);
                     break;
                 case HYBRID:
-                    results = performHybridSearch(query, intent.extractedKeyword(), threshold, versionFilter, resultsToReturn);
+                    results = performHybridSearch(searchQuery, keyword, threshold, versionFilter, context, resultsToReturn);
                     break;
                 case SEMANTIC:
                 default:
-                    results = performSemanticSearch(query, threshold, versionFilter, resultsToReturn);
+                    results = performSemanticSearch(searchQuery, threshold, versionFilter, context, resultsToReturn);
                     break;
             }
 
             long searchTime = System.currentTimeMillis() - startTime;
-            log.info("Search completed in {}ms: '{}' [{}] -> {} results", 
-                     searchTime, query, intent.type(), results.size());
+            log.info("Search completed in {}ms: '{}' [{}] -> {} results (context: {})", 
+                     searchTime, query, intent.type(), results.size(), 
+                     context.hasContext() ? context.contextDescription() : "none");
 
-            return SearchResponse.success(query, results, searchTime, intent);
+            return SearchResponse.success(query, results, searchTime, intent, context);
 
         } catch (Exception e) {
             log.error("Search failed for query: {}", query, e);
@@ -199,13 +227,16 @@ public class BibleSearchService {
     /**
      * Perform keyword-only search (exact text match).
      */
-    private List<VerseResult> performKeywordSearch(String keyword, String versionFilter, int maxResults) {
-        log.debug("Performing keyword search for: {}", keyword);
+    private List<VerseResult> performKeywordSearch(String keyword, String versionFilter, 
+                                                    ContextResult context, int maxResults) {
+        log.debug("Performing keyword search for: {} (context: {})", keyword,
+                 context.hasContext() ? context.contextDescription() : "none");
         
         List<VerseData> matches = bibleDataService.searchByKeyword(keyword);
         
         return matches.stream()
             .filter(v -> matchesVersion(v.getVersion(), versionFilter))
+            .filter(v -> context.matchesVerse(v.getBookShort(), v.getTestament()))
             .limit(maxResults)
             .map(v -> bibleDataService.toVerseResult(v, 1.0)
                 .toBuilder()
@@ -218,12 +249,14 @@ public class BibleSearchService {
      * Perform hybrid search: combines keyword and semantic results.
      */
     private List<VerseResult> performHybridSearch(String query, String keyword, double threshold, 
-                                                   String versionFilter, int maxResults) {
-        log.debug("Performing hybrid search: keyword='{}', query='{}'", keyword, query);
+                                                   String versionFilter, ContextResult context, int maxResults) {
+        log.debug("Performing hybrid search: keyword='{}', query='{}' (context: {})", 
+                 keyword, query, context.hasContext() ? context.contextDescription() : "none");
         
         // Get keyword matches first (these are exact matches, high priority)
         List<VerseData> keywordMatches = bibleDataService.searchByKeyword(keyword);
         Set<String> keywordMatchKeys = keywordMatches.stream()
+            .filter(v -> context.matchesVerse(v.getBookShort(), v.getTestament()))
             .map(VerseData::getKey)
             .collect(Collectors.toSet());
         
@@ -236,6 +269,7 @@ public class BibleSearchService {
         // Add keyword matches with boosted score
         keywordMatches.stream()
             .filter(v -> matchesVersion(v.getVersion(), versionFilter))
+            .filter(v -> context.matchesVerse(v.getBookShort(), v.getTestament()))
             .limit(maxResults)
             .forEach(v -> results.add(
                 bibleDataService.toVerseResult(v, 1.0)
@@ -251,6 +285,7 @@ public class BibleSearchService {
             semanticCandidates.stream()
                 .filter(sv -> !keywordMatchKeys.contains(sv.verse.getKey()))
                 .filter(sv -> matchesVersion(sv.verse.getVersion(), versionFilter))
+                .filter(sv -> context.matchesVerse(sv.verse.getBookShort(), sv.verse.getTestament()))
                 .map(sv -> {
                     double rerankedScore = calculateRerankedScore(sv, queryWords);
                     return new ScoredVerse(sv.verse, sv.score, rerankedScore);
@@ -273,8 +308,9 @@ public class BibleSearchService {
      * Perform semantic-only search (original two-stage retrieval).
      */
     private List<VerseResult> performSemanticSearch(String query, double threshold, 
-                                                     String versionFilter, int maxResults) {
-        log.debug("Performing semantic search for: {}", query);
+                                                     String versionFilter, ContextResult context, int maxResults) {
+        log.debug("Performing semantic search for: {} (context: {})", query,
+                 context.hasContext() ? context.contextDescription() : "none");
         
         // Stage 1: Bi-Encoder Candidate Retrieval
         List<ScoredVerse> candidates = retrieveCandidates(query, candidateCount);
@@ -284,7 +320,7 @@ public class BibleSearchService {
         }
 
         // Stage 2: Re-ranking and Filtering
-        return rerankAndFilter(candidates, query, threshold, versionFilter, maxResults);
+        return rerankAndFilter(candidates, query, threshold, versionFilter, context, maxResults);
     }
 
     /**
@@ -362,12 +398,14 @@ public class BibleSearchService {
      * 2. Keyword boost (if query words appear in verse text)
      * 3. Length normalization (prefer concise, focused verses)
      * 4. Version filter (if specified)
+     * 5. Context filter (book scope)
      */
     private List<VerseResult> rerankAndFilter(
             List<ScoredVerse> candidates,
             String query,
             double minScore,
             String versionFilter,
+            ContextResult context,
             int maxResults) {
 
         String[] queryWords = query.toLowerCase().split("\\s+");
@@ -375,6 +413,8 @@ public class BibleSearchService {
         return candidates.stream()
             // Filter by version if specified (with alias support)
             .filter(sv -> matchesVersion(sv.verse.getVersion(), versionFilter))
+            // Filter by context (book scope)
+            .filter(sv -> context.matchesVerse(sv.verse.getBookShort(), sv.verse.getTestament()))
             // Calculate re-ranked score
             .map(sv -> {
                 double rerankedScore = calculateRerankedScore(sv, queryWords);
@@ -455,6 +495,7 @@ public class BibleSearchService {
         stats.put("resultCount", resultCount);
         stats.put("minScore", minScore);
         stats.put("intentClassifier", intentClassifier.getStats());
+        stats.put("contextClassifier", contextClassifier.getStats());
         stats.put("gcsEnabled", embeddingStoreService.isEnabled());
         stats.put("gcsPath", embeddingStoreService.getGcsPath());
         stats.put("loadedFromGcs", loadedFromGcs);
