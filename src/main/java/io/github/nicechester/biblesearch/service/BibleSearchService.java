@@ -182,18 +182,28 @@ public class BibleSearchService {
 
             // Step 2: Classify user intent using the cleaned query
             SearchIntent intent = intentClassifier.classify(searchQuery);
+            String extractedKeyword = intent.extractedKeyword();
             log.info("Classified intent: {} for query '{}' (keyword: {}) - {}", 
-                     intent.type(), searchQuery, intent.extractedKeyword(), intent.reason());
+                     intent.type(), searchQuery, extractedKeyword != null ? extractedKeyword : "<query>", intent.reason());
 
             List<VerseResult> results;
 
             // Step 3: Perform search with context filtering
+            // Handle null keyword case: fall back to using searchQuery as keyword or semantic search
+            String keyword = intent.extractedKeyword();
+            if (keyword == null || keyword.isBlank()) {
+                // No keyword extracted - use the search query itself for keyword search,
+                // or fall back to semantic for better results
+                keyword = searchQuery;
+                log.debug("No keyword extracted, using searchQuery as keyword: '{}'", keyword);
+            }
+            
             switch (intent.type()) {
                 case KEYWORD:
-                    results = performKeywordSearch(intent.extractedKeyword(), versionFilter, context, resultsToReturn);
+                    results = performKeywordSearch(keyword, versionFilter, context, resultsToReturn);
                     break;
                 case HYBRID:
-                    results = performHybridSearch(searchQuery, intent.extractedKeyword(), threshold, versionFilter, context, resultsToReturn);
+                    results = performHybridSearch(searchQuery, keyword, threshold, versionFilter, context, resultsToReturn);
                     break;
                 case SEMANTIC:
                 default:

@@ -60,6 +60,8 @@ public class ContextClassifierService {
         "시가서에서 찬양에 대해",
         "대선지서에서 예언",
         "소선지서에서 심판",
+        "선지서에서 구원에 대한",
+        "예언서에서 메시아",
         
         // Book groups - English
         "in the four gospels about",
@@ -129,6 +131,10 @@ public class ContextClassifierService {
         // 소선지서 (Minor Prophets)
         Map.entry("소선지서", List.of("호", "욜", "암", "옵", "욘", "미", "나", "합", "습", "학", "슥", "말")),
         
+        // 선지서 (All Prophets - Major + Minor)
+        Map.entry("선지서", List.of("사", "렘", "애", "겔", "단", "호", "욜", "암", "옵", "욘", "미", "나", "합", "습", "학", "슥", "말")),
+        Map.entry("예언서", List.of("사", "렘", "애", "겔", "단", "호", "욜", "암", "옵", "욘", "미", "나", "합", "습", "학", "슥", "말")),
+        
         // 바울서신 (Pauline Epistles)
         Map.entry("바울서신", List.of("롬", "고전", "고후", "갈", "엡", "빌", "골", "살전", "살후", "딤전", "딤후", "딛", "몬")),
         
@@ -145,6 +151,8 @@ public class ContextClassifierService {
         Map.entry("wisdom books", List.of("Job", "Ps", "Prov", "Eccl", "Song")),
         Map.entry("major prophets", List.of("Isa", "Jer", "Lam", "Ezek", "Dan")),
         Map.entry("minor prophets", List.of("Hos", "Joel", "Amos", "Obad", "Jonah", "Mic", "Nah", "Hab", "Zeph", "Hag", "Zech", "Mal")),
+        Map.entry("prophets", List.of("Isa", "Jer", "Lam", "Ezek", "Dan", "Hos", "Joel", "Amos", "Obad", "Jonah", "Mic", "Nah", "Hab", "Zeph", "Hag", "Zech", "Mal")),
+        Map.entry("prophetic books", List.of("Isa", "Jer", "Lam", "Ezek", "Dan", "Hos", "Joel", "Amos", "Obad", "Jonah", "Mic", "Nah", "Hab", "Zeph", "Hag", "Zech", "Mal")),
         Map.entry("pauline epistles", List.of("Rom", "1Cor", "2Cor", "Gal", "Eph", "Phil", "Col", "1Thess", "2Thess", "1Tim", "2Tim", "Titus", "Philem")),
         Map.entry("general epistles", List.of("Heb", "Jas", "1Pet", "2Pet", "1John", "2John", "3John", "Jude"))
     );
