@@ -1,726 +1,181 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Help — Bible Search</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #21262d;
-            --bg-card: #1c2128;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --text-muted: #6e7681;
-            --accent-gold: #d4a373;
-            --accent-gold-dim: #9e7c5a;
-            --accent-blue: #58a6ff;
-            --accent-green: #3fb950;
-            --accent-purple: #a371f7;
-            --border-color: #30363d;
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-            --radius-sm: 6px;
-            --radius-md: 12px;
-            --radius-lg: 20px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            line-height: 1.6;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(ellipse at 20% 0%, rgba(212, 163, 115, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(88, 166, 255, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 40px 24px;
-        }
-
-        /* Header */
-        header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        .logo {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-            text-decoration: none;
-        }
-
-        .logo-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dim) 100%);
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        h1 {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 2.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: -0.02em;
-        }
-
-        .tagline {
-            color: var(--text-secondary);
-            font-size: 1rem;
-            margin-top: 8px;
-        }
-
-        /* Back link */
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--accent-gold);
-            text-decoration: none;
-            font-size: 0.9rem;
-            margin-bottom: 24px;
-            transition: color 0.2s ease;
-        }
-
-        .back-link:hover {
-            color: var(--text-primary);
-        }
-
-        /* Content sections */
-        .section {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 32px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .section h2 {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--accent-gold);
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .section h2 .icon {
-            font-size: 1.5rem;
-        }
-
-        .section p {
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-        }
-
-        .section p:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Example searches */
-        .example-grid {
-            display: grid;
-            gap: 16px;
-            margin-top: 20px;
-        }
-
-        .example-card {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .example-card:hover {
-            border-color: var(--accent-gold-dim);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .example-category {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--accent-purple);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 8px;
-        }
-
-        .example-query {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.15rem;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-
-        .example-description {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        /* Tips list */
-        .tips-list {
-            list-style: none;
-            margin-top: 16px;
-        }
-
-        .tips-list li {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .tips-list li:last-child {
-            border-bottom: none;
-        }
-
-        .tip-icon {
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .tip-content {
-            flex: 1;
-        }
-
-        .tip-title {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-
-        .tip-description {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        /* Version badges */
-        .version-info {
-            display: flex;
-            gap: 16px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-
-        .version-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 20px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-        }
-
-        .version-badge .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .version-badge .dot.asv { background: var(--accent-blue); }
-        .version-badge .dot.krv { background: var(--accent-purple); }
-
-        .version-name {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .version-lang {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        /* Feature grid */
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .feature-item {
-            background: var(--bg-tertiary);
-            border-radius: var(--radius-md);
-            padding: 20px;
-            text-align: center;
-        }
-
-        .feature-icon {
-            font-size: 2rem;
-            margin-bottom: 12px;
-        }
-
-        .feature-title {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-
-        .feature-desc {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        /* Code/keyword highlight */
-        code {
-            background: var(--bg-tertiary);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: var(--accent-gold);
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 48px 24px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        footer a {
-            color: var(--accent-gold);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Responsive */
-        @media (max-width: 640px) {
-            .container {
-                padding: 24px 16px;
-            }
-
-            h1 {
-                font-size: 1.75rem;
-            }
-
-            .section {
-                padding: 24px;
-            }
-
-            .version-info {
-                flex-direction: column;
-            }
-        }
+        :root { --bs-body-bg: #0d1117; --bs-body-color: #e6edf3; }
+        .example-card { cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
+        .example-card:hover { transform: translateY(-2px); border-color: #d4a373 !important; }
+        code { background: #21262d; padding: 2px 6px; border-radius: 4px; color: #d4a373; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <a href="/" class="back-link">← Back to Search</a>
+    <div class="container py-4">
+        <a href="/" class="text-decoration-none text-warning mb-3 d-inline-block"><i class="bi bi-arrow-left me-1"></i>Back to Search</a>
         
-        <header>
-            <a href="/" class="logo">
-                <div class="logo-icon">📖</div>
-                <h1>Help Guide</h1>
-            </a>
-            <p class="tagline">Learn how keyword, semantic, and hybrid search work</p>
+        <header class="text-center mb-5">
+            <h1 class="display-5 fw-bold"><i class="bi bi-question-circle me-2"></i>Help Guide</h1>
+            <p class="text-secondary">Learn how the AI-powered search works</p>
         </header>
 
-        <main>
-            <!-- How It Works -->
-            <section class="section">
-                <h2><span class="icon">✨</span> How It Works</h2>
-                <p>
-                    Bible Search uses <strong>AI-powered intent classification</strong> to automatically choose 
-                    the best search method for your query. Instead of rigid keyword matching, the system uses 
-                    the same multilingual embedding model to understand what you're looking for.
-                </p>
-
-                <div class="feature-grid">
-                    <div class="feature-item">
-                        <div class="feature-icon">🔤</div>
-                        <div class="feature-title">Keyword Search</div>
-                        <div class="feature-desc">Exact word match for names, places</div>
+        <!-- How It Works -->
+        <section class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-secondary bg-opacity-25"><h5 class="mb-0"><i class="bi bi-stars me-2 text-warning"></i>How It Works</h5></div>
+            <div class="card-body">
+                <p class="text-secondary">Bible Search uses AI-powered intent classification to automatically choose the best search method. The system understands your query using embeddings (semantic vectors) and routes it appropriately.</p>
+                
+                <div class="row g-3 mt-2">
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 rounded bg-secondary bg-opacity-10">
+                            <i class="bi bi-fonts display-5 text-success"></i>
+                            <h6 class="mt-2">Keyword</h6>
+                            <small class="text-muted">Exact word match</small>
+                        </div>
                     </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">🧠</div>
-                        <div class="feature-title">Semantic Search</div>
-                        <div class="feature-desc">Finds verses by meaning</div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 rounded bg-secondary bg-opacity-10">
+                            <i class="bi bi-lightbulb display-5 text-info"></i>
+                            <h6 class="mt-2">Semantic</h6>
+                            <small class="text-muted">Search by meaning</small>
+                        </div>
                     </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">🔄</div>
-                        <div class="feature-title">Hybrid Search</div>
-                        <div class="feature-desc">Combines both methods</div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 rounded bg-secondary bg-opacity-10">
+                            <i class="bi bi-arrow-repeat display-5 text-purple" style="color:#a371f7"></i>
+                            <h6 class="mt-2">Hybrid</h6>
+                            <small class="text-muted">Both combined</small>
+                        </div>
                     </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">🎯</div>
-                        <div class="feature-title">AI Classification</div>
-                        <div class="feature-desc">Embedding-based intent detection</div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-center p-3 rounded bg-secondary bg-opacity-10">
+                            <i class="bi bi-collection display-5 text-warning"></i>
+                            <h6 class="mt-2">Scoped</h6>
+                            <small class="text-muted">Within books</small>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
-                    <strong>How intent detection works:</strong> Your query is compared to prototype phrases 
-                    for each search type using embedding similarity. For example, "가사라는 지명" is more similar 
-                    to keyword prototypes, while "사랑에 대한 말씀" is more similar to semantic prototypes.
-                </p>
-            </section>
-
-            <!-- Search Modes -->
-            <section class="section">
-                <h2><span class="icon">🎯</span> Three Search Modes</h2>
+        <!-- Search Modes -->
+        <section class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-secondary bg-opacity-25"><h5 class="mb-0"><i class="bi bi-gear me-2 text-warning"></i>Search Modes</h5></div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6><i class="bi bi-fonts text-success me-2"></i>Keyword Search</h6>
+                    <p class="text-secondary small">For specific words, names, places. Triggered by patterns like <code>~가 나오는</code>, <code>~라는 지명</code>, <code>verses containing</code></p>
+                    <p class="small"><strong>Examples:</strong> <code>가사라는 지명이 나오는 구절</code>, <code>모세가 등장하는</code>, <code>verses with shepherd</code></p>
+                </div>
                 
-                <ul class="tips-list">
-                    <li>
-                        <span class="tip-icon">🔤</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Keyword Search — For specific words, names, places</div>
-                            <div class="tip-description">
-                                Triggered by patterns like <code>"가사"가 나오는</code>, <code>~라는 지명</code>, 
-                                <code>~가 등장하는</code>, or quoted text. Finds exact word matches.
-                                <br><br>
-                                <strong>Examples:</strong> <code>"가사"가 나오는 구절</code>, <code>모세라는 인물</code>, 
-                                <code>다윗이 등장하는</code>, <code>verses with "shepherd"</code>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon">🧠</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Semantic Search — For concepts, themes, questions</div>
-                            <div class="tip-description">
-                                Triggered by patterns like <code>~에 대한</code>, <code>about ~</code>, or natural language questions.
-                                Understands meaning and finds conceptually related verses.
-                                <br><br>
-                                <strong>Examples:</strong> <code>사랑에 대한 말씀</code>, <code>comfort in suffering</code>, 
-                                <code>God's faithfulness</code>, <code>용서에 관한 구절</code>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon">🔄</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Hybrid Search — For short queries</div>
-                            <div class="tip-description">
-                                Short 1-2 word queries automatically use both methods.
-                                First tries exact keyword match, then adds semantic results.
-                                <br><br>
-                                <strong>Examples:</strong> <code>가사</code>, <code>Moses</code>, <code>믿음</code>
-                            </div>
-                        </div>
-                    </li>
+                <div class="mb-4">
+                    <h6><i class="bi bi-lightbulb text-info me-2"></i>Semantic Search</h6>
+                    <p class="text-secondary small">For concepts, themes, questions. Understands meaning and finds conceptually related verses.</p>
+                    <p class="small"><strong>Examples:</strong> <code>사랑에 대한 말씀</code>, <code>comfort in suffering</code>, <code>God's faithfulness</code></p>
+                </div>
+                
+                <div class="mb-4">
+                    <h6><i class="bi bi-arrow-repeat me-2" style="color:#a371f7"></i>Hybrid Search</h6>
+                    <p class="text-secondary small">Short queries (1-2 words) automatically use both methods.</p>
+                    <p class="small"><strong>Examples:</strong> <code>가사</code>, <code>Moses</code>, <code>믿음</code></p>
+                </div>
+                
+                <div>
+                    <h6><i class="bi bi-collection text-warning me-2"></i>Scoped Search</h6>
+                    <p class="text-secondary small">Add a book scope using <code>~에서</code> or <code>in ~</code>. Supports testaments, book groups, single books, or multiple books.</p>
+                    <ul class="small text-secondary">
+                        <li><strong>Testament:</strong> 신약에서, 구약에서, in the New Testament</li>
+                        <li><strong>Book Groups:</strong> 사복음서, 모세오경, 바울서신, 시가서, 대선지서</li>
+                        <li><strong>Single Book:</strong> 로마서에서, 창세기에서</li>
+                        <li><strong>Multiple Books:</strong> 이사야, 예레미야에서</li>
+                    </ul>
+                    <p class="small"><strong>Examples:</strong> <code>사복음서에서 사랑이 나온 구절</code>, <code>로마서에서 복음의 정의</code>, <code>바울서신에서 믿음에 관한</code></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Example Searches -->
+        <section class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-secondary bg-opacity-25"><h5 class="mb-0"><i class="bi bi-search me-2 text-warning"></i>Example Searches</h5></div>
+            <div class="card-body">
+                <h6 class="text-success mb-3"><i class="bi bi-fonts me-1"></i> Keyword</h6>
+                <div class="row g-2 mb-4">
+                    <div class="col-md-6"><div class="card bg-secondary bg-opacity-10 border-secondary example-card" onclick="location.href='/?q=가사라는+지명이+나오는+구절'"><div class="card-body py-2"><strong>가사라는 지명이 나오는 구절</strong><br><small class="text-muted">Find verses with "가사" (Gaza)</small></div></div></div>
+                    <div class="col-md-6"><div class="card bg-secondary bg-opacity-10 border-secondary example-card" onclick="location.href='/?q=모세가+등장하는+구절'"><div class="card-body py-2"><strong>모세가 등장하는 구절</strong><br><small class="text-muted">Find verses mentioning Moses</small></div></div></div>
+                </div>
+
+                <h6 class="text-info mb-3"><i class="bi bi-lightbulb me-1"></i> Semantic</h6>
+                <div class="row g-2 mb-4">
+                    <div class="col-md-6"><div class="card bg-secondary bg-opacity-10 border-secondary example-card" onclick="location.href='/?q=사랑에+대한+말씀'"><div class="card-body py-2"><strong>사랑에 대한 말씀</strong><br><small class="text-muted">Verses about love (by meaning)</small></div></div></div>
+                    <div class="col-md-6"><div class="card bg-secondary bg-opacity-10 border-secondary example-card" onclick="location.href='/?q=comfort+in+suffering'"><div class="card-body py-2"><strong>comfort in suffering</strong><br><small class="text-muted">God's comfort during trials</small></div></div></div>
+                </div>
+
+                <h6 class="text-warning mb-3"><i class="bi bi-collection me-1"></i> Scoped</h6>
+                <div class="row g-2">
+                    <div class="col-md-6"><div class="card bg-secondary bg-opacity-10 border-secondary example-card" onclick="location.href='/?q=사복음서에서+사랑이+나온+구절'"><div class="card-body py-2"><strong>사복음서에서 사랑이 나온 구절</strong><br><small class="text-muted">Search "love" in Four Gospels only</small></div></div></div>
+                    <div class="col-md-6"><div class="card bg-secondary bg-opacity-10 border-secondary example-card" onclick="location.href='/?q=로마서에서+복음의+정의'"><div class="card-body py-2"><strong>로마서에서 복음의 정의</strong><br><small class="text-muted">Search "gospel" in Romans only</small></div></div></div>
+                    <div class="col-md-6"><div class="card bg-secondary bg-opacity-10 border-secondary example-card" onclick="location.href='/?q=바울서신에서+믿음에+관한'"><div class="card-body py-2"><strong>바울서신에서 믿음에 관한</strong><br><small class="text-muted">Search "faith" in Pauline epistles</small></div></div></div>
+                    <div class="col-md-6"><div class="card bg-secondary bg-opacity-10 border-secondary example-card" onclick="location.href='/?q=이사야,+예레미야에서+구원'"><div class="card-body py-2"><strong>이사야, 예레미야에서 구원</strong><br><small class="text-muted">Search in Isaiah & Jeremiah</small></div></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Direct Navigation -->
+        <section class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-secondary bg-opacity-25"><h5 class="mb-0"><i class="bi bi-bookmark me-2 text-warning"></i>Direct Navigation</h5></div>
+            <div class="card-body">
+                <p class="text-secondary small">Type a book name and chapter to jump directly to that passage.</p>
+                <div class="row g-2">
+                    <div class="col-4 col-md-2"><div class="card bg-secondary bg-opacity-10 border-secondary example-card text-center py-2" onclick="location.href='/?q=John+3:16'"><small>John 3:16</small></div></div>
+                    <div class="col-4 col-md-2"><div class="card bg-secondary bg-opacity-10 border-secondary example-card text-center py-2" onclick="location.href='/?q=Genesis+1'"><small>Genesis 1</small></div></div>
+                    <div class="col-4 col-md-2"><div class="card bg-secondary bg-opacity-10 border-secondary example-card text-center py-2" onclick="location.href='/?q=Ps+23'"><small>Ps 23</small></div></div>
+                    <div class="col-4 col-md-2"><div class="card bg-secondary bg-opacity-10 border-secondary example-card text-center py-2" onclick="location.href='/?q=요한복음+3:16'"><small>요한복음 3:16</small></div></div>
+                    <div class="col-4 col-md-2"><div class="card bg-secondary bg-opacity-10 border-secondary example-card text-center py-2" onclick="location.href='/?q=창+1'"><small>창 1</small></div></div>
+                    <div class="col-4 col-md-2"><div class="card bg-secondary bg-opacity-10 border-secondary example-card text-center py-2" onclick="location.href='/?q=시편+23'"><small>시편 23</small></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tips -->
+        <section class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-secondary bg-opacity-25"><h5 class="mb-0"><i class="bi bi-lightbulb me-2 text-warning"></i>Tips</h5></div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i><strong>Use natural language</strong> — Write queries like asking a friend</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i><strong>Describe concepts</strong> — Search for ideas and themes</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i><strong>Narrow with scopes</strong> — Add "~에서" to limit to specific books</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i><strong>Adjust score threshold</strong> — Lower for more results, higher for precision</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Click results</strong> — Open full chapter to read in context</li>
                 </ul>
-            </section>
+            </div>
+        </section>
 
-            <!-- Example Searches -->
-            <section class="section">
-                <h2><span class="icon">🔍</span> Example Searches</h2>
-                <p>Try these examples to see how different search modes work:</p>
-
-                <h3 style="color: var(--accent-green); margin: 24px 0 16px; font-size: 1.1rem;">🔤 Keyword Search — Find specific words</h3>
-                <div class="example-grid">
-                    <div class="example-card" onclick="window.location.href='/?q=가사라는+지명이+나오는+구절'">
-                        <div class="example-category">Place Name (Korean)</div>
-                        <div class="example-query">가사라는 지명이 나오는 구절</div>
-                        <div class="example-description">Find verses containing "가사" (Gaza)</div>
+        <!-- Bible Versions -->
+        <section class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-secondary bg-opacity-25"><h5 class="mb-0"><i class="bi bi-book me-2 text-warning"></i>Bible Versions</h5></div>
+            <div class="card-body">
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded bg-secondary bg-opacity-10">
+                        <span class="badge" style="background:rgba(88,166,255,0.3);color:#58a6ff">ASV</span>
+                        <span>American Standard Version (English)</span>
                     </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=모세가+등장하는+구절'">
-                        <div class="example-category">Person Name (Korean)</div>
-                        <div class="example-query">모세가 등장하는 구절</div>
-                        <div class="example-description">Find verses mentioning Moses</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=다윗이라는+인물'">
-                        <div class="example-category">Person Name (Korean)</div>
-                        <div class="example-query">다윗이라는 인물</div>
-                        <div class="example-description">Find verses mentioning David</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=verses+containing+shepherd'">
-                        <div class="example-category">Keyword (English)</div>
-                        <div class="example-query">verses containing shepherd</div>
-                        <div class="example-description">Find verses with the word "shepherd"</div>
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded bg-secondary bg-opacity-10">
+                        <span class="badge" style="background:rgba(163,113,247,0.3);color:#a371f7">KRV</span>
+                        <span>개역개정 (Korean Revised Version)</span>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <h3 style="color: var(--accent-blue); margin: 24px 0 16px; font-size: 1.1rem;">🧠 Semantic Search — Find by meaning</h3>
-                <div class="example-grid">
-                    <div class="example-card" onclick="window.location.href='/?q=사랑에+대한+말씀'">
-                        <div class="example-category">Concept (Korean)</div>
-                        <div class="example-query">사랑에 대한 말씀</div>
-                        <div class="example-description">Find verses about love (by meaning)</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=comfort+in+suffering'">
-                        <div class="example-category">Theme (English)</div>
-                        <div class="example-query">comfort in suffering</div>
-                        <div class="example-description">Discover passages about God's comfort during trials</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=God%27s+faithfulness'">
-                        <div class="example-category">God's Character</div>
-                        <div class="example-query">God's faithfulness</div>
-                        <div class="example-description">Explore verses about God's unwavering loyalty</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=용서에+관한+구절'">
-                        <div class="example-category">Concept (Korean)</div>
-                        <div class="example-query">용서에 관한 구절</div>
-                        <div class="example-description">Find passages about forgiveness</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=eternal+life'">
-                        <div class="example-category">Salvation</div>
-                        <div class="example-query">eternal life</div>
-                        <div class="example-description">What the Bible says about everlasting life</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=힘든+시간에+위로'">
-                        <div class="example-category">Comfort (Korean)</div>
-                        <div class="example-query">힘든 시간에 위로</div>
-                        <div class="example-description">Comfort in difficult times</div>
-                    </div>
-                </div>
-
-                <h3 style="color: var(--accent-purple); margin: 24px 0 16px; font-size: 1.1rem;">🔄 Hybrid Search — Short queries</h3>
-                <div class="example-grid">
-                    <div class="example-card" onclick="window.location.href='/?q=가사'">
-                        <div class="example-category">Short Query (Korean)</div>
-                        <div class="example-query">가사</div>
-                        <div class="example-description">Tries keyword match + semantic search</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=Moses'">
-                        <div class="example-category">Short Query (English)</div>
-                        <div class="example-query">Moses</div>
-                        <div class="example-description">Tries keyword match + semantic search</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=믿음'">
-                        <div class="example-category">Single Word (Korean)</div>
-                        <div class="example-query">믿음</div>
-                        <div class="example-description">Faith — both methods combined</div>
-                    </div>
-
-                    <div class="example-card" onclick="window.location.href='/?q=shepherd'">
-                        <div class="example-category">Single Word (English)</div>
-                        <div class="example-query">shepherd</div>
-                        <div class="example-description">Shepherd — keyword + meaning</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Direct Navigation -->
-            <section class="section">
-                <h2><span class="icon">📍</span> Open a Passage Directly</h2>
-                <p>
-                    You can type a book name and chapter number to jump directly to that passage.
-                    The search box recognizes Bible references in many formats:
-                </p>
-                
-                <div class="example-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-                    <div class="example-card" onclick="window.location.href='/?q=John+3:16'">
-                        <div class="example-category">With Verse</div>
-                        <div class="example-query">John 3:16</div>
-                    </div>
-                    <div class="example-card" onclick="window.location.href='/?q=Genesis+1'">
-                        <div class="example-category">Chapter Only</div>
-                        <div class="example-query">Genesis 1</div>
-                    </div>
-                    <div class="example-card" onclick="window.location.href='/?q=Ps+23'">
-                        <div class="example-category">Abbreviation</div>
-                        <div class="example-query">Ps 23</div>
-                    </div>
-                    <div class="example-card" onclick="window.location.href='/?q=1+Cor+13'">
-                        <div class="example-category">Numbered Book</div>
-                        <div class="example-query">1 Cor 13</div>
-                    </div>
-                    <div class="example-card" onclick="window.location.href='/?q=요한복음+3:16'">
-                        <div class="example-category">Korean Full</div>
-                        <div class="example-query">요한복음 3:16</div>
-                    </div>
-                    <div class="example-card" onclick="window.location.href='/?q=창+1'">
-                        <div class="example-category">Korean Short</div>
-                        <div class="example-query">창 1</div>
-                    </div>
-                </div>
-                
-                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
-                    <strong>Supported formats:</strong> "John 3", "John 3:16", "Jn 3:16", "1 Corinthians 13", "1Cor13:1", 
-                    "요한복음 3장16", "요 3:16", "창세기 1:1", "시편 23"
-                </p>
-            </section>
-
-            <!-- Search Tips -->
-            <section class="section">
-                <h2><span class="icon">💡</span> Search Tips</h2>
-                
-                <ul class="tips-list">
-                    <li>
-                        <span class="tip-icon">✅</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Use Natural Language</div>
-                            <div class="tip-description">
-                                Write your query like you're asking a friend. Instead of "love faith hope", 
-                                try "what does the Bible say about faith, hope, and love?"
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon">✅</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Describe Concepts</div>
-                            <div class="tip-description">
-                                Search for ideas and themes rather than specific words. 
-                                "How to handle difficult people" will find relevant verses even without exact matches.
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon">✅</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Try Different Phrasings</div>
-                            <div class="tip-description">
-                                If you don't get the results you want, rephrase your query. 
-                                "God's love" and "how much does God love me" may give different results.
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon">✅</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Adjust the Score Threshold</div>
-                            <div class="tip-description">
-                                Lower the <code>Min Score</code> to see more results (less relevant), 
-                                or raise it to see only highly relevant verses.
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon">✅</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Filter by Version</div>
-                            <div class="tip-description">
-                                Use the version filter to search only in English (ASV) or Korean (KRV) 
-                                if you want results in a specific language.
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon">✅</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Click to Read More</div>
-                            <div class="tip-description">
-                                Click on any search result to open the full chapter and read the verse in context.
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-            </section>
-
-            <!-- Bible Versions -->
-            <section class="section">
-                <h2><span class="icon">📚</span> Bible Versions</h2>
-                <p>Bible Search currently includes two complete Bible translations:</p>
-                
-                <div class="version-info">
-                    <div class="version-badge">
-                        <span class="dot asv"></span>
-                        <div>
-                            <div class="version-name">ASV</div>
-                            <div class="version-lang">American Standard Version (English)</div>
-                        </div>
-                    </div>
-                    <div class="version-badge">
-                        <span class="dot krv"></span>
-                        <div>
-                            <div class="version-name">KRV</div>
-                            <div class="version-lang">개역개정 (Korean Revised Version)</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Understanding Scores -->
-            <section class="section">
-                <h2><span class="icon">📊</span> Understanding Scores</h2>
-                <p>
-                    Each search result shows a <strong>relevance score</strong> from 0% to 100%. 
-                    This indicates how semantically similar the verse is to your query:
-                </p>
-                
-                <ul class="tips-list">
-                    <li>
-                        <span class="tip-icon" style="color: #3fb950;">●</span>
-                        <div class="tip-content">
-                            <div class="tip-title">50%+ (Green) — High Relevance</div>
-                            <div class="tip-description">
-                                Strongly related to your query. These verses directly address your topic.
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon" style="color: #d29922;">●</span>
-                        <div class="tip-content">
-                            <div class="tip-title">35-50% (Yellow) — Moderate Relevance</div>
-                            <div class="tip-description">
-                                Related to your query. These verses touch on similar themes.
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="tip-icon" style="color: #8b949e;">●</span>
-                        <div class="tip-content">
-                            <div class="tip-title">Below 35% (Gray) — Lower Relevance</div>
-                            <div class="tip-description">
-                                Loosely connected. May still be valuable but less directly related.
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-            </section>
-        </main>
-
-        <footer>
-            <p>
-                <a href="/">← Back to Bible Search</a><br><br>
-                Zero latency · Zero cost · 100% local inference<br>
-                Built with <a href="https://docs.langchain4j.dev/" target="_blank">LangChain4j</a> + ONNX Runtime
-            </p>
+        <footer class="text-center text-muted small mt-5 pt-4 border-top border-secondary">
+            <a href="/" class="text-decoration-none text-warning">Back to Bible Search</a><br>
+            <span class="opacity-75">Zero latency · 100% local inference · LangChain4j + ONNX</span>
         </footer>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

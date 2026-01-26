@@ -1,946 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bible Search — Semantic Verse Discovery</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Bible Search</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #21262d;
-            --bg-card: #1c2128;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --text-muted: #6e7681;
-            --accent-gold: #d4a373;
-            --accent-gold-dim: #9e7c5a;
-            --accent-blue: #58a6ff;
-            --accent-green: #3fb950;
-            --accent-purple: #a371f7;
-            --border-color: #30363d;
-            --score-high: #3fb950;
-            --score-mid: #d29922;
-            --score-low: #8b949e;
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-            --radius-sm: 6px;
-            --radius-md: 12px;
-            --radius-lg: 20px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            line-height: 1.6;
-        }
-
-        /* Background pattern */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(ellipse at 20% 0%, rgba(212, 163, 115, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(88, 166, 255, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 40px 24px;
-        }
-
-        /* Header */
-        header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        .logo {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .logo-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dim) 100%);
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        h1 {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 2.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: -0.02em;
-        }
-
-        .tagline {
-            color: var(--text-secondary);
-            font-size: 1rem;
-            margin-top: 8px;
-        }
-
-        .help-link {
-            display: inline-block;
-            margin-top: 12px;
-            color: var(--accent-gold);
-            text-decoration: none;
-            font-size: 0.9rem;
-            opacity: 0.8;
-            transition: opacity 0.2s ease;
-        }
-
-        .help-link:hover {
-            opacity: 1;
-            text-decoration: underline;
-        }
-
-        /* Search Box */
-        .search-container {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            margin-bottom: 32px;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .search-form {
-            display: flex;
-            gap: 12px;
-        }
-
-        .search-input-wrapper {
-            flex: 1;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 16px 20px;
-            padding-left: 48px;
-            font-size: 1rem;
-            font-family: inherit;
-            background: var(--bg-tertiary);
-            border: 2px solid transparent;
-            border-radius: var(--radius-md);
-            color: var(--text-primary);
-            transition: all 0.2s ease;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--accent-gold);
-            background: var(--bg-card);
-        }
-
-        .search-input::placeholder {
-            color: var(--text-muted);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 1.2rem;
-        }
-
-        .search-btn {
-            padding: 16px 32px;
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: inherit;
-            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dim) 100%);
-            color: var(--bg-primary);
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .search-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(212, 163, 115, 0.3);
-        }
-
-        .search-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Filters */
-        .filters {
-            display: flex;
-            gap: 16px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .filter-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .filter-select {
-            padding: 8px 12px;
-            font-size: 0.85rem;
-            font-family: inherit;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--accent-gold);
-        }
-
-        /* Stats */
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            padding: 0 4px;
-        }
-
-        .stats-left {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .stats-right {
-            display: flex;
-            gap: 16px;
-        }
-
-        .stat-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .stat-badge .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .stat-badge .dot.asv { background: var(--accent-blue); }
-        .stat-badge .dot.krv { background: var(--accent-purple); }
-
-        .method-badge {
-            margin-left: 12px;
-            font-weight: 500;
-        }
-
-        .method-badge.keyword {
-            background: rgba(63, 185, 80, 0.15);
-            border-color: rgba(63, 185, 80, 0.3);
-            color: var(--score-high);
-        }
-
-        .method-badge.semantic {
-            background: rgba(88, 166, 255, 0.15);
-            border-color: rgba(88, 166, 255, 0.3);
-            color: var(--accent-blue);
-        }
-
-        .method-badge.hybrid {
-            background: rgba(163, 113, 247, 0.15);
-            border-color: rgba(163, 113, 247, 0.3);
-            color: var(--accent-purple);
-        }
-
-        .method-icon {
-            font-size: 0.9rem;
-        }
-
-        /* Results */
-        .results-container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .result-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            transition: all 0.2s ease;
-        }
-
-        .result-card:hover {
-            border-color: var(--accent-gold-dim);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-            cursor: pointer;
-        }
-
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 16px 20px;
-            background: var(--bg-tertiary);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .result-reference {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .reference-main {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--accent-gold);
-        }
-
-        .reference-title {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        .result-meta {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .version-badge {
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .version-badge.asv {
-            background: rgba(88, 166, 255, 0.15);
-            color: var(--accent-blue);
-        }
-
-        .version-badge.krv {
-            background: rgba(163, 113, 247, 0.15);
-            color: var(--accent-purple);
-        }
-
-        .score-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .score-badge.high {
-            background: rgba(63, 185, 80, 0.15);
-            color: var(--score-high);
-        }
-
-        .score-badge.mid {
-            background: rgba(210, 153, 34, 0.15);
-            color: var(--score-mid);
-        }
-
-        .score-badge.low {
-            background: rgba(139, 148, 158, 0.15);
-            color: var(--score-low);
-        }
-
-        .score-bar {
-            width: 40px;
-            height: 4px;
-            background: var(--bg-primary);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .score-bar-fill {
-            height: 100%;
-            border-radius: 2px;
-            transition: width 0.3s ease;
-        }
-
-        .result-body {
-            padding: 20px;
-        }
-
-        .verse-text {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.15rem;
-            line-height: 1.8;
-            color: var(--text-primary);
-        }
-
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 48px;
-            color: var(--text-secondary);
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border-color);
-            border-top-color: var(--accent-gold);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 64px 24px;
-            color: var(--text-secondary);
-        }
-
-        .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .empty-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
-
-        .empty-description {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        /* Suggestions */
-        .suggestions {
-            margin-top: 24px;
-        }
-
-        .suggestions-title {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-        }
-
-        .suggestion-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .suggestion-chip {
-            padding: 8px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .suggestion-chip:hover {
-            background: var(--bg-card);
-            border-color: var(--accent-gold-dim);
-            color: var(--accent-gold);
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 48px 24px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        footer a {
-            color: var(--accent-gold);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Bible Reader View */
-        .reader-container {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .reader-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 24px;
-            background: var(--bg-tertiary);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .reader-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .reader-title h2 {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--accent-gold);
-        }
-
-        .reader-version {
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border-radius: 4px;
-            text-transform: uppercase;
-        }
-
-        .reader-version.asv {
-            background: rgba(88, 166, 255, 0.15);
-            color: var(--accent-blue);
-        }
-
-        .reader-version.krv, .reader-version.개역개정 {
-            background: rgba(163, 113, 247, 0.15);
-            color: var(--accent-purple);
-        }
-
-        .reader-nav {
-            display: flex;
-            gap: 8px;
-        }
-
-        .nav-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            font-family: inherit;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .nav-btn:hover:not(:disabled) {
-            background: var(--bg-tertiary);
-            border-color: var(--accent-gold-dim);
-            color: var(--accent-gold);
-        }
-
-        .nav-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .back-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 4px 8px;
-            transition: color 0.2s ease;
-        }
-
-        .back-btn:hover {
-            color: var(--accent-gold);
-        }
-
-        .reader-body {
-            padding: 32px;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .reader-verse {
-            display: flex;
-            gap: 16px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-color);
-            transition: background 0.2s ease;
-        }
-
-        .reader-verse:last-child {
-            border-bottom: none;
-        }
-
-        .reader-verse:hover {
-            background: var(--bg-tertiary);
-            margin: 0 -16px;
-            padding: 12px 16px;
-            border-radius: var(--radius-sm);
-        }
-
-        .reader-verse.highlight {
-            background: rgba(212, 163, 115, 0.1);
-            margin: 0 -16px;
-            padding: 12px 16px;
-            border-radius: var(--radius-sm);
-            border-left: 3px solid var(--accent-gold);
-        }
-
-        .verse-num {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--accent-gold);
-            min-width: 32px;
-            text-align: right;
-        }
-
-        .verse-content {
-            flex: 1;
-        }
-
-        .verse-title {
-            font-size: 0.85rem;
-            color: var(--accent-purple);
-            font-style: italic;
-            margin-bottom: 4px;
-        }
-
-        .verse-text-reader {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.15rem;
-            line-height: 1.8;
-            color: var(--text-primary);
-        }
-
-        /* Chapter selector */
-        .chapter-selector {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .chapter-select {
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            font-family: inherit;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            cursor: pointer;
-        }
-
-        .chapter-select:focus {
-            outline: none;
-            border-color: var(--accent-gold);
-        }
-
-        /* Parallel Bible Reader */
-        .parallel-reader {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0;
-        }
-
-        .parallel-column {
-            border-right: 1px solid var(--border-color);
-        }
-
-        .parallel-column:last-child {
-            border-right: none;
-        }
-
-        .parallel-column-header {
-            padding: 12px 20px;
-            background: var(--bg-tertiary);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .parallel-column-title {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .parallel-verses {
-            padding: 16px;
-        }
-
-        .parallel-verse {
-            display: flex;
-            gap: 12px;
-            padding: 10px 8px;
-            border-bottom: 1px solid var(--border-color);
-            min-height: 60px;
-        }
-
-        .parallel-verse:last-child {
-            border-bottom: none;
-        }
-
-        .parallel-verse:hover {
-            background: var(--bg-tertiary);
-        }
-
-        .parallel-verse.highlight {
-            background: rgba(212, 163, 115, 0.1);
-            border-left: 3px solid var(--accent-gold);
-            margin-left: -3px;
-        }
-
-        .parallel-verse-num {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--accent-gold);
-            min-width: 24px;
-            text-align: right;
-            padding-top: 2px;
-        }
-
-        .parallel-verse-content {
-            flex: 1;
-        }
-
-        .parallel-verse-title {
-            font-size: 0.8rem;
-            color: var(--accent-purple);
-            font-style: italic;
-            margin-bottom: 4px;
-        }
-
-        .parallel-verse-text {
-            font-family: 'Crimson Pro', Georgia, serif;
-            font-size: 1.05rem;
-            line-height: 1.7;
-            color: var(--text-primary);
-        }
-
-        .reader-body-parallel {
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        /* Responsive */
-        @media (max-width: 900px) {
-            .parallel-reader {
-                grid-template-columns: 1fr;
-            }
-
-            .parallel-column {
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-            }
-
-            .parallel-column:last-child {
-                border-bottom: none;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .container {
-                padding: 24px 16px;
-            }
-
-            h1 {
-                font-size: 1.75rem;
-            }
-
-            .search-form {
-                flex-direction: column;
-            }
-
-            .search-btn {
-                width: 100%;
-            }
-
-            .filters {
-                flex-direction: column;
-            }
-
-            .stats-bar {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .result-header {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .reader-header {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .reader-nav {
-                width: 100%;
-                justify-content: space-between;
-            }
-        }
+        :root { --bs-body-bg: #0d1117; --bs-body-color: #e6edf3; }
+        body { min-height: 100vh; }
+        .badge-method { font-size: 0.8rem; }
+        .badge-keyword { background-color: rgba(63, 185, 80, 0.2); color: #3fb950; }
+        .badge-semantic { background-color: rgba(88, 166, 255, 0.2); color: #58a6ff; }
+        .badge-hybrid { background-color: rgba(163, 113, 247, 0.2); color: #a371f7; }
+        .badge-context { background-color: rgba(210, 153, 34, 0.2); color: #d29922; }
+        .badge-asv { background-color: rgba(88, 166, 255, 0.15); color: #58a6ff; }
+        .badge-krv { background-color: rgba(163, 113, 247, 0.15); color: #a371f7; }
+        .score-high { color: #3fb950; }
+        .score-mid { color: #d29922; }
+        .score-low { color: #8b949e; }
+        .result-card { transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
+        .result-card:hover { transform: translateY(-2px); border-color: #d4a373 !important; }
+        .verse-text { font-family: Georgia, serif; font-size: 1.1rem; line-height: 1.8; }
+        .chip { cursor: pointer; transition: all 0.2s; }
+        .chip:hover { background-color: #30363d !important; border-color: #d4a373 !important; color: #d4a373 !important; }
+        .reader-verse.highlight { background-color: rgba(212, 163, 115, 0.15); border-left: 3px solid #d4a373; }
+        .parallel-reader { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+        @media (max-width: 768px) { .parallel-reader { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <div class="logo-icon">📖</div>
-                <h1>Bible Search</h1>
-            </div>
-            <p class="tagline">Intelligent search with automatic keyword & semantic detection</p>
-            <a href="/help.html" class="help-link">How does this work? →</a>
+    <div class="container py-4">
+        <!-- Header -->
+        <header class="text-center mb-4">
+            <h1 class="display-5 fw-bold"><i class="bi bi-book me-2"></i>Bible Search</h1>
+            <p class="text-secondary mb-2">AI-powered search with automatic keyword, semantic & scoped detection</p>
+            <a href="/help.html" class="text-decoration-none small">How does this work? <i class="bi bi-arrow-right"></i></a>
         </header>
 
-        <main>
-            <div class="search-container">
-                <form class="search-form" id="searchForm">
-                    <div class="search-input-wrapper">
-                        <span class="search-icon">🔍</span>
-                        <input 
-                            type="text" 
-                            class="search-input" 
-                            id="searchInput"
-                            placeholder="Try '가사라는 지명' (keyword) or '사랑에 대한 말씀' (semantic) or 'John 3:16'"
-                            autocomplete="off"
-                        >
+        <!-- Search -->
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-body">
+                <form id="searchForm" class="row g-2">
+                    <div class="col-12 col-md">
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary border-secondary"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control bg-dark border-secondary text-light" id="searchInput" 
+                                   placeholder="사랑에 대한 말씀 / 사복음서에서 사랑 / John 3:16" autocomplete="off">
+                        </div>
                     </div>
-                    <button type="submit" class="search-btn" id="searchBtn">Search</button>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-warning" id="searchBtn">Search</button>
+                    </div>
                 </form>
-                
-                <div class="filters">
-                    <div class="filter-group">
-                        <label class="filter-label">Version:</label>
-                        <select class="filter-select" id="versionFilter">
+                <div class="row g-2 mt-2">
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm bg-dark border-secondary text-light" id="versionFilter">
                             <option value="">All Versions</option>
-                            <option value="ASV">ASV (English)</option>
-                            <option value="KRV">KRV (Korean)</option>
+                            <option value="ASV">ASV</option>
+                            <option value="KRV">KRV</option>
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <label class="filter-label">Results:</label>
-                        <select class="filter-select" id="maxResults">
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm bg-dark border-secondary text-light" id="maxResults">
                             <option value="5">5 results</option>
                             <option value="10">10 results</option>
                             <option value="20">20 results</option>
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <label class="filter-label">Min Score:</label>
-                        <select class="filter-select" id="minScore">
-                            <option value="0.2">0.2 (More)</option>
-                            <option value="0.3" selected>0.3 (Default)</option>
-                            <option value="0.4">0.4 (Stricter)</option>
-                            <option value="0.5">0.5 (High)</option>
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm bg-dark border-secondary text-light" id="minScore">
+                            <option value="0.2">Min 0.2</option>
+                            <option value="0.3" selected>Min 0.3</option>
+                            <option value="0.4">Min 0.4</option>
                         </select>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div id="resultsArea">
-                <div class="empty-state">
-                    <div class="empty-icon">✨</div>
-                    <h2 class="empty-title">Discover Scripture</h2>
-                    <p class="empty-description">
-                        Search by <strong>keyword</strong> (exact word match) or by <strong>meaning</strong> (semantic).
-                            Our AI automatically detects your intent and uses the best search method.
-                    </p>
-                    <div class="suggestions">
-                        <p class="suggestions-title">🧠 Semantic — search by meaning:</p>
-                        <div class="suggestion-chips">
-                            <span class="suggestion-chip" data-query="사랑에 대한 말씀">사랑에 대한 말씀</span>
-                            <span class="suggestion-chip" data-query="comfort in suffering">comfort in suffering</span>
-                            <span class="suggestion-chip" data-query="God's faithfulness">God's faithfulness</span>
-                            <span class="suggestion-chip" data-query="용서에 관한 구절">용서에 관한 구절</span>
-                        </div>
-                        <p class="suggestions-title" style="margin-top: 16px;">🔤 Keyword — find specific words:</p>
-                        <div class="suggestion-chips">
-                            <span class="suggestion-chip" data-query="가사라는 지명이 나오는 구절">가사라는 지명</span>
-                            <span class="suggestion-chip" data-query="모세가 등장하는 구절">모세가 등장하는</span>
-                            <span class="suggestion-chip" data-query="다윗이라는 인물">다윗이라는 인물</span>
-                            <span class="suggestion-chip" data-query="verses containing shepherd">containing shepherd</span>
-                        </div>
+        <!-- Results Area -->
+        <div id="resultsArea">
+            <div class="text-center py-5">
+                <i class="bi bi-stars display-1 text-secondary opacity-50"></i>
+                <h4 class="mt-3">Discover Scripture</h4>
+                <p class="text-secondary">Search by keyword, meaning, or within specific books</p>
+                
+                <div class="mt-4">
+                    <p class="text-muted small mb-2"><i class="bi bi-lightbulb me-1"></i> Semantic (by meaning)</p>
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                        <span class="chip badge bg-secondary border border-secondary" data-query="사랑에 대한 말씀">사랑에 대한 말씀</span>
+                        <span class="chip badge bg-secondary border border-secondary" data-query="comfort in suffering">comfort in suffering</span>
+                        <span class="chip badge bg-secondary border border-secondary" data-query="용서에 관한 구절">용서에 관한 구절</span>
+                    </div>
+                    
+                    <p class="text-muted small mb-2"><i class="bi bi-fonts me-1"></i> Keyword (exact match)</p>
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                        <span class="chip badge bg-secondary border border-secondary" data-query="가사라는 지명이 나오는 구절">가사라는 지명</span>
+                        <span class="chip badge bg-secondary border border-secondary" data-query="모세가 등장하는 구절">모세가 등장하는</span>
+                        <span class="chip badge bg-secondary border border-secondary" data-query="verses containing shepherd">containing shepherd</span>
+                    </div>
+                    
+                    <p class="text-muted small mb-2"><i class="bi bi-collection me-1"></i> Scoped (within books)</p>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <span class="chip badge bg-secondary border border-secondary" data-query="사복음서에서 사랑이 나온 구절">사복음서에서 사랑</span>
+                        <span class="chip badge bg-secondary border border-secondary" data-query="로마서에서 복음의 정의">로마서에서 복음</span>
+                        <span class="chip badge bg-secondary border border-secondary" data-query="바울서신에서 믿음에 관한">바울서신에서 믿음</span>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
 
-        <footer>
-            <p>
-                <a href="/help.html">Help &amp; Examples</a><br><br>
-                Zero latency · Zero cost · 100% local inference<br>
-                Built with <a href="https://docs.langchain4j.dev/" target="_blank">LangChain4j</a> + ONNX Runtime
-            </p>
+        <!-- Footer -->
+        <footer class="text-center text-muted small mt-5 pt-4 border-top border-secondary">
+            <a href="/help.html" class="text-decoration-none">Help & Examples</a><br>
+            <span class="opacity-75">Zero latency · 100% local inference · LangChain4j + ONNX</span>
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const searchForm = document.getElementById('searchForm');
         const searchInput = document.getElementById('searchInput');
@@ -950,805 +128,194 @@
         const maxResults = document.getElementById('maxResults');
         const minScore = document.getElementById('minScore');
 
-        // Current state
-        let currentView = 'search'; // 'search' or 'reader'
+        let currentView = 'search';
         let lastSearchResults = null;
+        let currentReaderState = null;
 
-        // ==================== Book Reference Parser ====================
-        
-        // Book name mappings to bookShort (case-insensitive)
+        // Book mappings
         const BOOK_MAP = {
-            // English - Full names
-            'genesis': { short: 'Gen', version: 'ASV' },
-            'exodus': { short: 'Ex', version: 'ASV' },
-            'leviticus': { short: 'Lev', version: 'ASV' },
-            'numbers': { short: 'Num', version: 'ASV' },
-            'deuteronomy': { short: 'Deut', version: 'ASV' },
-            'joshua': { short: 'Josh', version: 'ASV' },
-            'judges': { short: 'Judg', version: 'ASV' },
-            'ruth': { short: 'Ruth', version: 'ASV' },
-            '1 samuel': { short: '1 Sam', version: 'ASV' },
-            '2 samuel': { short: '2 Sam', version: 'ASV' },
-            '1 kings': { short: '1 Kgs', version: 'ASV' },
-            '2 kings': { short: '2 Kgs', version: 'ASV' },
-            '1 chronicles': { short: '1 Chr', version: 'ASV' },
-            '2 chronicles': { short: '2 Chr', version: 'ASV' },
-            'ezra': { short: 'Ezra', version: 'ASV' },
-            'nehemiah': { short: 'Neh', version: 'ASV' },
-            'esther': { short: 'Esth', version: 'ASV' },
-            'job': { short: 'Job', version: 'ASV' },
-            'psalms': { short: 'Ps', version: 'ASV' },
-            'psalm': { short: 'Ps', version: 'ASV' },
-            'proverbs': { short: 'Prov', version: 'ASV' },
-            'ecclesiastes': { short: 'Eccl', version: 'ASV' },
-            'song of solomon': { short: 'Song', version: 'ASV' },
-            'isaiah': { short: 'Isa', version: 'ASV' },
-            'jeremiah': { short: 'Jer', version: 'ASV' },
-            'lamentations': { short: 'Lam', version: 'ASV' },
-            'ezekiel': { short: 'Ezek', version: 'ASV' },
-            'daniel': { short: 'Dan', version: 'ASV' },
-            'hosea': { short: 'Hos', version: 'ASV' },
-            'joel': { short: 'Joel', version: 'ASV' },
-            'amos': { short: 'Amos', version: 'ASV' },
-            'obadiah': { short: 'Obad', version: 'ASV' },
-            'jonah': { short: 'Jonah', version: 'ASV' },
-            'micah': { short: 'Mic', version: 'ASV' },
-            'nahum': { short: 'Nah', version: 'ASV' },
-            'habakkuk': { short: 'Hab', version: 'ASV' },
-            'zephaniah': { short: 'Zeph', version: 'ASV' },
-            'haggai': { short: 'Hag', version: 'ASV' },
-            'zechariah': { short: 'Zech', version: 'ASV' },
-            'malachi': { short: 'Mal', version: 'ASV' },
-            'matthew': { short: 'Matt', version: 'ASV' },
-            'mark': { short: 'Mark', version: 'ASV' },
-            'luke': { short: 'Luke', version: 'ASV' },
-            'john': { short: 'John', version: 'ASV' },
-            'acts': { short: 'Acts', version: 'ASV' },
-            'romans': { short: 'Rom', version: 'ASV' },
-            '1 corinthians': { short: '1 Cor', version: 'ASV' },
-            '2 corinthians': { short: '2 Cor', version: 'ASV' },
-            'galatians': { short: 'Gal', version: 'ASV' },
-            'ephesians': { short: 'Eph', version: 'ASV' },
-            'philippians': { short: 'Phil', version: 'ASV' },
-            'colossians': { short: 'Col', version: 'ASV' },
-            '1 thessalonians': { short: '1 Thess', version: 'ASV' },
-            '2 thessalonians': { short: '2 Thess', version: 'ASV' },
-            '1 timothy': { short: '1 Tim', version: 'ASV' },
-            '2 timothy': { short: '2 Tim', version: 'ASV' },
-            'titus': { short: 'Titus', version: 'ASV' },
-            'philemon': { short: 'Phlm', version: 'ASV' },
-            'hebrews': { short: 'Heb', version: 'ASV' },
-            'james': { short: 'Jas', version: 'ASV' },
-            '1 peter': { short: '1 Pet', version: 'ASV' },
-            '2 peter': { short: '2 Pet', version: 'ASV' },
-            '1 john': { short: '1 John', version: 'ASV' },
-            '2 john': { short: '2 John', version: 'ASV' },
-            '3 john': { short: '3 John', version: 'ASV' },
-            'jude': { short: 'Jude', version: 'ASV' },
-            'revelation': { short: 'Rev', version: 'ASV' },
-            
-            // English - Common abbreviations
-            'gen': { short: 'Gen', version: 'ASV' },
-            'ex': { short: 'Ex', version: 'ASV' },
-            'exod': { short: 'Ex', version: 'ASV' },
-            'lev': { short: 'Lev', version: 'ASV' },
-            'num': { short: 'Num', version: 'ASV' },
-            'deut': { short: 'Deut', version: 'ASV' },
-            'josh': { short: 'Josh', version: 'ASV' },
-            'judg': { short: 'Judg', version: 'ASV' },
-            '1sam': { short: '1 Sam', version: 'ASV' },
-            '2sam': { short: '2 Sam', version: 'ASV' },
-            '1kgs': { short: '1 Kgs', version: 'ASV' },
-            '2kgs': { short: '2 Kgs', version: 'ASV' },
-            '1ki': { short: '1 Kgs', version: 'ASV' },
-            '2ki': { short: '2 Kgs', version: 'ASV' },
-            '1chr': { short: '1 Chr', version: 'ASV' },
-            '2chr': { short: '2 Chr', version: 'ASV' },
-            'neh': { short: 'Neh', version: 'ASV' },
-            'esth': { short: 'Esth', version: 'ASV' },
-            'ps': { short: 'Ps', version: 'ASV' },
-            'prov': { short: 'Prov', version: 'ASV' },
-            'eccl': { short: 'Eccl', version: 'ASV' },
-            'ecc': { short: 'Eccl', version: 'ASV' },
-            'song': { short: 'Song', version: 'ASV' },
-            'sos': { short: 'Song', version: 'ASV' },
-            'isa': { short: 'Isa', version: 'ASV' },
-            'jer': { short: 'Jer', version: 'ASV' },
-            'lam': { short: 'Lam', version: 'ASV' },
-            'ezek': { short: 'Ezek', version: 'ASV' },
-            'dan': { short: 'Dan', version: 'ASV' },
-            'hos': { short: 'Hos', version: 'ASV' },
-            'obad': { short: 'Obad', version: 'ASV' },
-            'mic': { short: 'Mic', version: 'ASV' },
-            'nah': { short: 'Nah', version: 'ASV' },
-            'hab': { short: 'Hab', version: 'ASV' },
-            'zeph': { short: 'Zeph', version: 'ASV' },
-            'hag': { short: 'Hag', version: 'ASV' },
-            'zech': { short: 'Zech', version: 'ASV' },
-            'mal': { short: 'Mal', version: 'ASV' },
-            'matt': { short: 'Matt', version: 'ASV' },
-            'mt': { short: 'Matt', version: 'ASV' },
-            'mk': { short: 'Mark', version: 'ASV' },
-            'lk': { short: 'Luke', version: 'ASV' },
-            'jn': { short: 'John', version: 'ASV' },
-            'rom': { short: 'Rom', version: 'ASV' },
-            '1cor': { short: '1 Cor', version: 'ASV' },
-            '2cor': { short: '2 Cor', version: 'ASV' },
-            'gal': { short: 'Gal', version: 'ASV' },
-            'eph': { short: 'Eph', version: 'ASV' },
-            'phil': { short: 'Phil', version: 'ASV' },
-            'col': { short: 'Col', version: 'ASV' },
-            '1thess': { short: '1 Thess', version: 'ASV' },
-            '2thess': { short: '2 Thess', version: 'ASV' },
-            '1tim': { short: '1 Tim', version: 'ASV' },
-            '2tim': { short: '2 Tim', version: 'ASV' },
-            'phlm': { short: 'Phlm', version: 'ASV' },
-            'heb': { short: 'Heb', version: 'ASV' },
-            'jas': { short: 'Jas', version: 'ASV' },
-            '1pet': { short: '1 Pet', version: 'ASV' },
-            '2pet': { short: '2 Pet', version: 'ASV' },
-            '1jn': { short: '1 John', version: 'ASV' },
-            '2jn': { short: '2 John', version: 'ASV' },
-            '3jn': { short: '3 John', version: 'ASV' },
-            'rev': { short: 'Rev', version: 'ASV' },
-            
-            // Korean - Full names
-            '창세기': { short: '창', version: 'KRV' },
-            '출애굽기': { short: '출', version: 'KRV' },
-            '레위기': { short: '레', version: 'KRV' },
-            '민수기': { short: '민', version: 'KRV' },
-            '신명기': { short: '신', version: 'KRV' },
-            '여호수아': { short: '수', version: 'KRV' },
-            '사사기': { short: '삿', version: 'KRV' },
-            '룻기': { short: '룻', version: 'KRV' },
-            '사무엘상': { short: '삼상', version: 'KRV' },
-            '사무엘하': { short: '삼하', version: 'KRV' },
-            '열왕기상': { short: '왕상', version: 'KRV' },
-            '열왕기하': { short: '왕하', version: 'KRV' },
-            '역대상': { short: '대상', version: 'KRV' },
-            '역대하': { short: '대하', version: 'KRV' },
-            '에스라': { short: '스', version: 'KRV' },
-            '느헤미야': { short: '느', version: 'KRV' },
-            '에스더': { short: '에', version: 'KRV' },
-            '욥기': { short: '욥', version: 'KRV' },
-            '시편': { short: '시', version: 'KRV' },
-            '잠언': { short: '잠', version: 'KRV' },
-            '전도서': { short: '전', version: 'KRV' },
-            '아가': { short: '아', version: 'KRV' },
-            '이사야': { short: '사', version: 'KRV' },
-            '예레미야': { short: '렘', version: 'KRV' },
-            '예레미야애가': { short: '애', version: 'KRV' },
-            '에스겔': { short: '겔', version: 'KRV' },
-            '다니엘': { short: '단', version: 'KRV' },
-            '호세아': { short: '호', version: 'KRV' },
-            '요엘': { short: '욜', version: 'KRV' },
-            '아모스': { short: '암', version: 'KRV' },
-            '오바댜': { short: '옵', version: 'KRV' },
-            '요나': { short: '욘', version: 'KRV' },
-            '미가': { short: '미', version: 'KRV' },
-            '나훔': { short: '나', version: 'KRV' },
-            '하박국': { short: '합', version: 'KRV' },
-            '스바냐': { short: '습', version: 'KRV' },
-            '학개': { short: '학', version: 'KRV' },
-            '스가랴': { short: '슥', version: 'KRV' },
-            '말라기': { short: '말', version: 'KRV' },
-            '마태복음': { short: '마', version: 'KRV' },
-            '마가복음': { short: '막', version: 'KRV' },
-            '누가복음': { short: '눅', version: 'KRV' },
-            '요한복음': { short: '요', version: 'KRV' },
-            '사도행전': { short: '행', version: 'KRV' },
-            '로마서': { short: '롬', version: 'KRV' },
-            '고린도전서': { short: '고전', version: 'KRV' },
-            '고린도후서': { short: '고후', version: 'KRV' },
-            '갈라디아서': { short: '갈', version: 'KRV' },
-            '에베소서': { short: '엡', version: 'KRV' },
-            '빌립보서': { short: '빌', version: 'KRV' },
-            '골로새서': { short: '골', version: 'KRV' },
-            '데살로니가전서': { short: '살전', version: 'KRV' },
-            '데살로니가후서': { short: '살후', version: 'KRV' },
-            '디모데전서': { short: '딤전', version: 'KRV' },
-            '디모데후서': { short: '딤후', version: 'KRV' },
-            '디도서': { short: '딛', version: 'KRV' },
-            '빌레몬서': { short: '몬', version: 'KRV' },
-            '히브리서': { short: '히', version: 'KRV' },
-            '야고보서': { short: '약', version: 'KRV' },
-            '베드로전서': { short: '벧전', version: 'KRV' },
-            '베드로후서': { short: '벧후', version: 'KRV' },
-            '요한일서': { short: '요일', version: 'KRV' },
-            '요한이서': { short: '요이', version: 'KRV' },
-            '요한삼서': { short: '요삼', version: 'KRV' },
-            '유다서': { short: '유', version: 'KRV' },
-            '요한계시록': { short: '계', version: 'KRV' },
-            
-            // Korean - Short names
-            '창': { short: '창', version: 'KRV' },
-            '출': { short: '출', version: 'KRV' },
-            '레': { short: '레', version: 'KRV' },
-            '민': { short: '민', version: 'KRV' },
-            '신': { short: '신', version: 'KRV' },
-            '수': { short: '수', version: 'KRV' },
-            '삿': { short: '삿', version: 'KRV' },
-            '룻': { short: '룻', version: 'KRV' },
-            '삼상': { short: '삼상', version: 'KRV' },
-            '삼하': { short: '삼하', version: 'KRV' },
-            '왕상': { short: '왕상', version: 'KRV' },
-            '왕하': { short: '왕하', version: 'KRV' },
-            '대상': { short: '대상', version: 'KRV' },
-            '대하': { short: '대하', version: 'KRV' },
-            '스': { short: '스', version: 'KRV' },
-            '느': { short: '느', version: 'KRV' },
-            '에': { short: '에', version: 'KRV' },
-            '욥': { short: '욥', version: 'KRV' },
-            '시': { short: '시', version: 'KRV' },
-            '잠': { short: '잠', version: 'KRV' },
-            '전': { short: '전', version: 'KRV' },
-            '아': { short: '아', version: 'KRV' },
-            '사': { short: '사', version: 'KRV' },
-            '렘': { short: '렘', version: 'KRV' },
-            '애': { short: '애', version: 'KRV' },
-            '겔': { short: '겔', version: 'KRV' },
-            '단': { short: '단', version: 'KRV' },
-            '호': { short: '호', version: 'KRV' },
-            '욜': { short: '욜', version: 'KRV' },
-            '암': { short: '암', version: 'KRV' },
-            '옵': { short: '옵', version: 'KRV' },
-            '욘': { short: '욘', version: 'KRV' },
-            '미': { short: '미', version: 'KRV' },
-            '나': { short: '나', version: 'KRV' },
-            '합': { short: '합', version: 'KRV' },
-            '습': { short: '습', version: 'KRV' },
-            '학': { short: '학', version: 'KRV' },
-            '슥': { short: '슥', version: 'KRV' },
-            '말': { short: '말', version: 'KRV' },
-            '마': { short: '마', version: 'KRV' },
-            '막': { short: '막', version: 'KRV' },
-            '눅': { short: '눅', version: 'KRV' },
-            '요': { short: '요', version: 'KRV' },
-            '행': { short: '행', version: 'KRV' },
-            '롬': { short: '롬', version: 'KRV' },
-            '고전': { short: '고전', version: 'KRV' },
-            '고후': { short: '고후', version: 'KRV' },
-            '갈': { short: '갈', version: 'KRV' },
-            '엡': { short: '엡', version: 'KRV' },
-            '빌': { short: '빌', version: 'KRV' },
-            '골': { short: '골', version: 'KRV' },
-            '살전': { short: '살전', version: 'KRV' },
-            '살후': { short: '살후', version: 'KRV' },
-            '딤전': { short: '딤전', version: 'KRV' },
-            '딤후': { short: '딤후', version: 'KRV' },
-            '딛': { short: '딛', version: 'KRV' },
-            '몬': { short: '몬', version: 'KRV' },
-            '히': { short: '히', version: 'KRV' },
-            '약': { short: '약', version: 'KRV' },
-            '벧전': { short: '벧전', version: 'KRV' },
-            '벧후': { short: '벧후', version: 'KRV' },
-            '요일': { short: '요일', version: 'KRV' },
-            '요이': { short: '요이', version: 'KRV' },
-            '요삼': { short: '요삼', version: 'KRV' },
-            '유': { short: '유', version: 'KRV' },
-            '계': { short: '계', version: 'KRV' },
+            'genesis': { short: 'Gen', version: 'ASV' }, 'exodus': { short: 'Ex', version: 'ASV' },
+            'john': { short: 'John', version: 'ASV' }, 'matthew': { short: 'Matt', version: 'ASV' },
+            'mark': { short: 'Mark', version: 'ASV' }, 'luke': { short: 'Luke', version: 'ASV' },
+            'romans': { short: 'Rom', version: 'ASV' }, 'psalms': { short: 'Ps', version: 'ASV' },
+            'psalm': { short: 'Ps', version: 'ASV' }, 'ps': { short: 'Ps', version: 'ASV' },
+            'gen': { short: 'Gen', version: 'ASV' }, 'ex': { short: 'Ex', version: 'ASV' },
+            'jn': { short: 'John', version: 'ASV' }, 'matt': { short: 'Matt', version: 'ASV' },
+            'rom': { short: 'Rom', version: 'ASV' }, 'rev': { short: 'Rev', version: 'ASV' },
+            '1 cor': { short: '1 Cor', version: 'ASV' }, '1cor': { short: '1 Cor', version: 'ASV' },
+            '창세기': { short: '창', version: 'KRV' }, '출애굽기': { short: '출', version: 'KRV' },
+            '요한복음': { short: '요', version: 'KRV' }, '마태복음': { short: '마', version: 'KRV' },
+            '로마서': { short: '롬', version: 'KRV' }, '시편': { short: '시', version: 'KRV' },
+            '창': { short: '창', version: 'KRV' }, '출': { short: '출', version: 'KRV' },
+            '요': { short: '요', version: 'KRV' }, '마': { short: '마', version: 'KRV' },
+            '막': { short: '막', version: 'KRV' }, '눅': { short: '눅', version: 'KRV' },
+            '롬': { short: '롬', version: 'KRV' }, '시': { short: '시', version: 'KRV' },
         };
 
-        // Mapping between ASV and KRV book shorts (for parallel view)
         const ASV_TO_KRV = {
-            'Gen': '창', 'Ex': '출', 'Lev': '레', 'Num': '민', 'Deut': '신',
-            'Josh': '수', 'Judg': '삿', 'Ruth': '룻', '1 Sam': '삼상', '2 Sam': '삼하',
-            '1 Kgs': '왕상', '2 Kgs': '왕하', '1 Chr': '대상', '2 Chr': '대하',
-            'Ezra': '스', 'Neh': '느', 'Esth': '에', 'Job': '욥', 'Ps': '시',
-            'Prov': '잠', 'Eccl': '전', 'Song': '아', 'Isa': '사', 'Jer': '렘',
-            'Lam': '애', 'Ezek': '겔', 'Dan': '단', 'Hos': '호', 'Joel': '욜',
-            'Amos': '암', 'Obad': '옵', 'Jonah': '욘', 'Mic': '미', 'Nah': '나',
-            'Hab': '합', 'Zeph': '습', 'Hag': '학', 'Zech': '슥', 'Mal': '말',
-            'Matt': '마', 'Mark': '막', 'Luke': '눅', 'John': '요', 'Acts': '행',
-            'Rom': '롬', '1 Cor': '고전', '2 Cor': '고후', 'Gal': '갈', 'Eph': '엡',
-            'Phil': '빌', 'Col': '골', '1 Thess': '살전', '2 Thess': '살후',
-            '1 Tim': '딤전', '2 Tim': '딤후', 'Titus': '딛', 'Phlm': '몬',
-            'Heb': '히', 'Jas': '약', '1 Pet': '벧전', '2 Pet': '벧후',
-            '1 John': '요일', '2 John': '요이', '3 John': '요삼', 'Jude': '유', 'Rev': '계'
+            'Gen': '창', 'Ex': '출', 'Ps': '시', 'Matt': '마', 'Mark': '막',
+            'Luke': '눅', 'John': '요', 'Rom': '롬', 'Rev': '계', '1 Cor': '고전'
         };
+        const KRV_TO_ASV = Object.fromEntries(Object.entries(ASV_TO_KRV).map(([k,v])=>[v,k]));
 
-        const KRV_TO_ASV = Object.fromEntries(
-            Object.entries(ASV_TO_KRV).map(([k, v]) => [v, k])
-        );
-
-        /**
-         * Parse a Bible reference from user input.
-         * Supports formats like:
-         * - "John 3" → { book: 'John', chapter: 3 }
-         * - "John 3:16" → { book: 'John', chapter: 3, verse: 16 }
-         * - "1 Corinthians 13" → { book: '1 Cor', chapter: 13 }
-         * - "창세기 1:1" → { book: '창', chapter: 1, verse: 1 }
-         * - "디도서 1장" → { book: '딛', chapter: 1 }
-         * - "요한복음 3장16절" → { book: '요', chapter: 3, verse: 16 }
-         * - "시편 23편" → { book: '시', chapter: 23 } (Psalms uses 편 instead of 장)
-         */
         function parseReference(input) {
-            const trimmed = input.trim();
-            
-            // Patterns to match Bible references
-            // Pattern 1: Book with number prefix (e.g., "1 John 3:16", "1john3:16")
-            // Pattern 2: Simple book (e.g., "John 3:16", "Genesis 1")
-            
-            // Try to extract book name and chapter:verse
-            // This regex handles: "1 John 3:16", "john 3:16", "창세기 1:1", "창 1:1", "디도서 1장", "요한복음 3장16절"
-            // Also handles: "시편 23편" (Psalms uses 편 instead of 장)
             const refPattern = /^((?:\d\s*)?[a-zA-Z\u3131-\u318E\uAC00-\uD7A3]+(?:\s+[a-zA-Z\u3131-\u318E\uAC00-\uD7A3]+)*)\s*(\d+)(?:장|편)?(?:\s*[:\.]\s*(\d+)절?|\s*(\d+)절)?$/i;
-            
-            const match = trimmed.match(refPattern);
-            if (!match) {
-                return null;
-            }
-            
-            let bookName = match[1].trim().toLowerCase();
-            const chapter = parseInt(match[2], 10);
-            // Verse can be in group 3 (after :.) or group 4 (after 장, like "3장16절")
-            const verse = match[3] ? parseInt(match[3], 10) : (match[4] ? parseInt(match[4], 10) : null);
-            
-            // Normalize book name variations
-            // Handle "1john" → "1 john", "1cor" → "1cor"
-            bookName = bookName.replace(/^(\d)\s*/, '$1 ').replace(/\s+/g, ' ').trim();
-            
-            // Try to find the book in our map
-            let bookInfo = BOOK_MAP[bookName];
-            
-            // If not found, try without spaces for numbered books
-            if (!bookInfo) {
-                const noSpace = bookName.replace(/\s+/g, '');
-                bookInfo = BOOK_MAP[noSpace];
-            }
-            
-            if (!bookInfo) {
-                return null;
-            }
-            
-            return {
-                bookShort: bookInfo.short,
-                version: bookInfo.version,
-                chapter: chapter,
-                verse: verse
-            };
+            const match = input.trim().match(refPattern);
+            if (!match) return null;
+            let bookName = match[1].trim().toLowerCase().replace(/^(\d)\s*/, '$1 ').replace(/\s+/g, ' ').trim();
+            let bookInfo = BOOK_MAP[bookName] || BOOK_MAP[bookName.replace(/\s+/g, '')];
+            if (!bookInfo) return null;
+            return { bookShort: bookInfo.short, version: bookInfo.version, chapter: parseInt(match[2]), verse: match[3] ? parseInt(match[3]) : (match[4] ? parseInt(match[4]) : null) };
         }
 
-        /**
-         * Handle search - check if it's a reference first, otherwise do semantic search
-         */
         function handleSearch() {
             const query = searchInput.value.trim();
             if (!query) return;
-            
-            // Try to parse as a Bible reference
             const ref = parseReference(query);
-            if (ref) {
-                // It's a reference - open the reader directly
-                const version = versionFilter.value || ref.version;
-                openReader(ref.bookShort, ref.chapter, ref.verse, version);
-            } else {
-                // Not a reference - do semantic search
-                performSearch();
-            }
+            if (ref) openReader(ref.bookShort, ref.chapter, ref.verse, versionFilter.value || ref.version);
+            else performSearch();
         }
 
-        // Handle suggestion chips
-        document.querySelectorAll('.suggestion-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                searchInput.value = chip.dataset.query;
-                handleSearch();
-            });
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', () => { searchInput.value = chip.dataset.query; handleSearch(); });
         });
 
-        // Handle form submit
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            handleSearch();
-        });
+        searchForm.addEventListener('submit', e => { e.preventDefault(); handleSearch(); });
 
         async function performSearch() {
-            const query = searchInput.value.trim();
-            if (!query) return;
-
             currentView = 'search';
             searchBtn.disabled = true;
-            resultsArea.innerHTML = `
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Searching verses...</p>
-                </div>
-            `;
+            resultsArea.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-warning"></div><p class="mt-3 text-secondary">Searching...</p></div>';
 
             try {
                 const response = await fetch('/api/search', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        query: query,
-                        maxResults: parseInt(maxResults.value),
-                        minScore: parseFloat(minScore.value),
-                        version: versionFilter.value || null
-                    })
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: searchInput.value.trim(), maxResults: parseInt(maxResults.value), minScore: parseFloat(minScore.value), version: versionFilter.value || null })
                 });
-
                 const data = await response.json();
                 lastSearchResults = data;
                 renderResults(data);
             } catch (error) {
-                resultsArea.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">⚠️</div>
-                        <h2 class="empty-title">Search Error</h2>
-                        <p class="empty-description">${error.message}</p>
-                    </div>
-                `;
-            } finally {
-                searchBtn.disabled = false;
-            }
+                resultsArea.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>${error.message}</div>`;
+            } finally { searchBtn.disabled = false; }
         }
 
         function renderResults(data) {
-            if (!data.success) {
-                resultsArea.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">⚠️</div>
-                        <h2 class="empty-title">Search Error</h2>
-                        <p class="empty-description">${data.error}</p>
-                    </div>
-                `;
-                return;
-            }
+            if (!data.success) { resultsArea.innerHTML = `<div class="alert alert-danger">${data.error}</div>`; return; }
+            if (!data.results?.length) { resultsArea.innerHTML = '<div class="text-center py-5 text-secondary"><i class="bi bi-search display-4"></i><p class="mt-3">No results found</p></div>'; return; }
 
-            if (!data.results || data.results.length === 0) {
-                resultsArea.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">🔍</div>
-                        <h2 class="empty-title">No Results Found</h2>
-                        <p class="empty-description">
-                            Try a different search query or lower the minimum score threshold.
-                        </p>
-                    </div>
-                `;
-                return;
-            }
+            const methodIcon = data.searchMethod === 'KEYWORD' ? 'bi-fonts' : data.searchMethod === 'SEMANTIC' ? 'bi-lightbulb' : 'bi-arrow-repeat';
+            const methodClass = data.searchMethod?.toLowerCase() || '';
 
-            // Build search method badge
-            const methodBadge = data.searchMethod ? `
-                <span class="stat-badge method-badge ${data.searchMethod.toLowerCase()}">
-                    <span class="method-icon">${data.searchMethod === 'KEYWORD' ? '🔤' : data.searchMethod === 'SEMANTIC' ? '🧠' : '🔄'}</span>
-                    ${data.searchMethod === 'KEYWORD' ? 'Keyword' : data.searchMethod === 'SEMANTIC' ? 'Semantic' : 'Hybrid'}
-                    ${data.extractedKeyword ? `: "${data.extractedKeyword}"` : ''}
-                </span>
-            ` : '';
+            let html = `<div class="d-flex flex-wrap align-items-center gap-2 mb-3 small">
+                <span class="text-secondary">Found <strong>${data.totalResults}</strong> in <strong>${data.searchTimeMs}ms</strong></span>
+                ${data.searchMethod ? `<span class="badge badge-method badge-${methodClass}"><i class="bi ${methodIcon} me-1"></i>${data.searchMethod}${data.extractedKeyword ? ': "'+data.extractedKeyword+'"' : ''}</span>` : ''}
+                ${data.detectedContext ? `<span class="badge badge-method badge-context"><i class="bi bi-collection me-1"></i>${data.detectedContext}</span>` : ''}
+            </div><div class="d-flex flex-column gap-3">`;
 
-            const statsHtml = `
-                <div class="stats-bar">
-                    <div class="stats-left">
-                        Found <strong>${data.totalResults}</strong> verses in <strong>${data.searchTimeMs}ms</strong>
-                        ${methodBadge}
-                    </div>
-                    <div class="stats-right">
-                        <span class="stat-badge">
-                            <span class="dot asv"></span> ASV
-                        </span>
-                        <span class="stat-badge">
-                            <span class="dot krv"></span> KRV
-                        </span>
-                    </div>
-                </div>
-            `;
-
-            const resultsHtml = data.results.map((verse, index) => {
-                const score = verse.rerankedScore || verse.score;
-                const scoreClass = score >= 0.5 ? 'high' : score >= 0.35 ? 'mid' : 'low';
-                const scorePercent = Math.round(score * 100);
-                const versionClass = verse.version.toLowerCase() === '개역개정' ? 'krv' : verse.version.toLowerCase();
-
-                return `
-                    <div class="result-card" 
-                         data-book="${verse.bookShort}" 
-                         data-chapter="${verse.chapter}" 
-                         data-verse="${verse.verse}"
-                         data-version="${verse.version}"
-                         onclick="openReader('${verse.bookShort}', ${verse.chapter}, ${verse.verse}, '${verse.version}')"
-                         style="animation: fadeIn 0.3s ease ${index * 0.05}s both">
-                        <div class="result-header">
-                            <div class="result-reference">
-                                <span class="reference-main">${verse.reference}</span>
-                                ${verse.title ? `<span class="reference-title">${verse.title}</span>` : ''}
-                            </div>
-                            <div class="result-meta">
-                                <span class="version-badge ${versionClass}">${verse.version}</span>
-                                <div class="score-badge ${scoreClass}">
-                                    <div class="score-bar">
-                                        <div class="score-bar-fill" style="width: ${scorePercent}%; background: currentColor"></div>
-                                    </div>
-                                    ${scorePercent}%
-                                </div>
-                            </div>
-                        </div>
-                        <div class="result-body">
-                            <p class="verse-text">${verse.text}</p>
+            data.results.forEach(v => {
+                const score = v.rerankedScore || v.score;
+                const scoreClass = score >= 0.5 ? 'score-high' : score >= 0.35 ? 'score-mid' : 'score-low';
+                const versionClass = v.version === 'ASV' ? 'badge-asv' : 'badge-krv';
+                html += `<div class="card bg-dark border-secondary result-card" onclick="openReader('${v.bookShort}', ${v.chapter}, ${v.verse}, '${v.version}')">
+                    <div class="card-header bg-secondary bg-opacity-25 d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div><strong class="text-warning">${v.reference}</strong>${v.title ? `<br><small class="text-muted fst-italic">${v.title}</small>` : ''}</div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="badge ${versionClass}">${v.version}</span>
+                            <span class="${scoreClass} fw-bold">${Math.round(score*100)}%</span>
                         </div>
                     </div>
-                `;
-            }).join('');
-
-            resultsArea.innerHTML = statsHtml + `<div class="results-container">${resultsHtml}</div>`;
+                    <div class="card-body"><p class="verse-text mb-0">${v.text}</p></div>
+                </div>`;
+            });
+            html += '</div>';
+            resultsArea.innerHTML = html;
         }
-
-        // ==================== Bible Reader ====================
-
-        // Store current reader state for navigation
-        let currentReaderState = null;
 
         async function openReader(bookShort, chapter, highlightVerse, version) {
             currentView = 'reader';
-            resultsArea.innerHTML = `
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading chapter...</p>
-                </div>
-            `;
+            resultsArea.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-warning"></div><p class="mt-3 text-secondary">Loading chapter...</p></div>';
 
             try {
-                // Determine ASV and KRV book shorts
-                let asvBookShort, krvBookShort;
+                let asvBookShort = ASV_TO_KRV[bookShort] ? bookShort : KRV_TO_ASV[bookShort] || bookShort;
+                let krvBookShort = KRV_TO_ASV[bookShort] ? bookShort : ASV_TO_KRV[bookShort] || bookShort;
                 
-                if (ASV_TO_KRV[bookShort]) {
-                    // Input is ASV short
-                    asvBookShort = bookShort;
-                    krvBookShort = ASV_TO_KRV[bookShort];
-                } else if (KRV_TO_ASV[bookShort]) {
-                    // Input is KRV short
-                    krvBookShort = bookShort;
-                    asvBookShort = KRV_TO_ASV[bookShort];
-                } else {
-                    // Unknown, try both with same short
-                    asvBookShort = bookShort;
-                    krvBookShort = bookShort;
-                }
-
-                // Fetch both versions in parallel
-                const [asvResponse, krvResponse] = await Promise.all([
+                const [asvRes, krvRes] = await Promise.all([
                     fetch(`/api/bible/${encodeURIComponent(asvBookShort)}/${chapter}?version=ASV`),
                     fetch(`/api/bible/${encodeURIComponent(krvBookShort)}/${chapter}?version=KRV`)
                 ]);
 
-                let asvData = null, krvData = null;
+                let asvData = asvRes.ok ? await asvRes.json() : null;
+                let krvData = krvRes.ok ? await krvRes.json() : null;
 
-                if (asvResponse.ok) {
-                    asvData = await asvResponse.json();
-                }
-                if (krvResponse.ok) {
-                    krvData = await krvResponse.json();
-                }
+                if (!asvData && !krvData) throw new Error('Chapter not found');
 
-                if (!asvData && !krvData) {
-                    throw new Error('Chapter not found in either version');
-                }
-
-                // Store state for navigation
-                currentReaderState = {
-                    asvBookShort,
-                    krvBookShort,
-                    chapter,
-                    totalChapters: Math.max(asvData?.totalChapters || 0, krvData?.totalChapters || 0)
-                };
-
-                renderParallelReader(asvData, krvData, highlightVerse);
+                currentReaderState = { asvBookShort, krvBookShort, chapter, totalChapters: Math.max(asvData?.totalChapters || 0, krvData?.totalChapters || 0) };
+                renderReader(asvData, krvData, highlightVerse);
             } catch (error) {
-                resultsArea.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">⚠️</div>
-                        <h2 class="empty-title">Error Loading Chapter</h2>
-                        <p class="empty-description">${error.message}</p>
-                        <button class="nav-btn" onclick="backToSearch()" style="margin-top: 16px;">← Back to Search</button>
-                    </div>
-                `;
+                resultsArea.innerHTML = `<div class="alert alert-danger">${error.message}<br><button class="btn btn-sm btn-outline-light mt-2" onclick="backToSearch()">Back</button></div>`;
             }
         }
 
-        function renderParallelReader(asvData, krvData, highlightVerse) {
-            // Use whichever data we have for metadata
-            const primaryData = krvData || asvData;
-            const chapter = primaryData.chapter;
-            const totalChapters = currentReaderState.totalChapters;
-            const hasPrevChapter = chapter > 1;
-            const hasNextChapter = chapter < totalChapters;
+        function renderReader(asvData, krvData, highlightVerse) {
+            const primary = krvData || asvData;
+            const chapter = primary.chapter;
+            const { totalChapters } = currentReaderState;
 
-            // Build chapter options
-            let chapterOptions = '';
-            for (let i = 1; i <= totalChapters; i++) {
-                chapterOptions += `<option value="${i}" ${i === chapter ? 'selected' : ''}>${i}장</option>`;
-            }
+            let chapterOpts = '';
+            for (let i = 1; i <= totalChapters; i++) chapterOpts += `<option value="${i}" ${i === chapter ? 'selected' : ''}>${i}장</option>`;
 
-            // Get max verses count
-            const maxVerses = Math.max(
-                asvData?.verses?.length || 0,
-                krvData?.verses?.length || 0
-            );
+            const maxVerses = Math.max(asvData?.verses?.length || 0, krvData?.verses?.length || 0);
+            const asvMap = {}, krvMap = {};
+            asvData?.verses?.forEach(v => asvMap[v.verse] = v);
+            krvData?.verses?.forEach(v => krvMap[v.verse] = v);
 
-            // Build verse maps for easy lookup
-            const asvVerseMap = {};
-            const krvVerseMap = {};
-            if (asvData?.verses) {
-                asvData.verses.forEach(v => asvVerseMap[v.verse] = v);
-            }
-            if (krvData?.verses) {
-                krvData.verses.forEach(v => krvVerseMap[v.verse] = v);
-            }
-
-            // Build parallel verses HTML
-            let krvVersesHtml = '';
-            let asvVersesHtml = '';
-
+            let krvHtml = '', asvHtml = '';
             for (let i = 1; i <= maxVerses; i++) {
-                const krvVerse = krvVerseMap[i];
-                const asvVerse = asvVerseMap[i];
-                const isHighlight = i === highlightVerse;
-
-                // KRV column
-                krvVersesHtml += `
-                    <div class="parallel-verse ${isHighlight ? 'highlight' : ''}" id="krv-verse-${i}">
-                        <span class="parallel-verse-num">${i}</span>
-                        <div class="parallel-verse-content">
-                            ${krvVerse?.title ? `<div class="parallel-verse-title">${krvVerse.title}</div>` : ''}
-                            <p class="parallel-verse-text">${krvVerse?.text || ''}</p>
-                        </div>
-                    </div>
-                `;
-
-                // ASV column
-                asvVersesHtml += `
-                    <div class="parallel-verse ${isHighlight ? 'highlight' : ''}" id="asv-verse-${i}">
-                        <span class="parallel-verse-num">${i}</span>
-                        <div class="parallel-verse-content">
-                            ${asvVerse?.title ? `<div class="parallel-verse-title">${asvVerse.title}</div>` : ''}
-                            <p class="parallel-verse-text">${asvVerse?.text || ''}</p>
-                        </div>
-                    </div>
-                `;
+                const hl = i === highlightVerse ? 'highlight' : '';
+                krvHtml += `<div class="reader-verse py-2 px-2 border-bottom border-secondary ${hl}" id="krv-${i}"><span class="text-warning me-2 fw-bold">${i}</span><span class="verse-text">${krvMap[i]?.text || ''}</span></div>`;
+                asvHtml += `<div class="reader-verse py-2 px-2 border-bottom border-secondary ${hl}" id="asv-${i}"><span class="text-warning me-2 fw-bold">${i}</span><span class="verse-text">${asvMap[i]?.text || ''}</span></div>`;
             }
-
-            // Get book names
-            const krvBookName = krvData?.bookName || primaryData.bookName;
-            const asvBookName = asvData?.bookName || primaryData.bookName;
 
             resultsArea.innerHTML = `
-                <div class="reader-container">
-                    <div class="reader-header">
-                        <div class="reader-title">
-                            <button class="back-btn" onclick="backToSearch()" title="Back to search">←</button>
-                            <h2>${krvBookName} ${chapter}장</h2>
-                        </div>
-                        <div class="reader-nav">
-                            <button class="nav-btn" onclick="navigateChapter(${chapter - 1})" ${!hasPrevChapter ? 'disabled' : ''}>
-                                ← 이전
-                            </button>
-                            <div class="chapter-selector">
-                                <select class="chapter-select" onchange="navigateChapter(parseInt(this.value))">
-                                    ${chapterOptions}
-                                </select>
-                            </div>
-                            <button class="nav-btn" onclick="navigateChapter(${chapter + 1})" ${!hasNextChapter ? 'disabled' : ''}>
-                                다음 →
-                            </button>
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-secondary bg-opacity-25 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="backToSearch()"><i class="bi bi-arrow-left"></i></button><strong class="text-warning">${primary.bookName} ${chapter}장</strong></div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="navigateChapter(${chapter-1})" ${chapter <= 1 ? 'disabled' : ''}>Prev</button>
+                            <select class="form-select form-select-sm bg-dark border-secondary text-light" style="width:auto" onchange="navigateChapter(parseInt(this.value))">${chapterOpts}</select>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="navigateChapter(${chapter+1})" ${chapter >= totalChapters ? 'disabled' : ''}>Next</button>
                         </div>
                     </div>
-                    <div class="reader-body-parallel">
+                    <div class="card-body p-0" style="max-height:70vh;overflow-y:auto;">
                         <div class="parallel-reader">
-                            <div class="parallel-column">
-                                <div class="parallel-column-header">
-                                    <span class="parallel-column-title">${krvBookName}</span>
-                                    <span class="reader-version krv">개역개정</span>
-                                </div>
-                                <div class="parallel-verses">
-                                    ${krvVersesHtml}
-                                </div>
+                            <div class="border-end border-secondary">
+                                <div class="bg-secondary bg-opacity-25 p-2 text-center sticky-top"><span class="badge badge-krv">KRV</span></div>
+                                <div class="p-2">${krvHtml}</div>
                             </div>
-                            <div class="parallel-column">
-                                <div class="parallel-column-header">
-                                    <span class="parallel-column-title">${asvBookName}</span>
-                                    <span class="reader-version asv">ASV</span>
-                                </div>
-                                <div class="parallel-verses">
-                                    ${asvVersesHtml}
-                                </div>
+                            <div>
+                                <div class="bg-secondary bg-opacity-25 p-2 text-center sticky-top"><span class="badge badge-asv">ASV</span></div>
+                                <div class="p-2">${asvHtml}</div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
 
-            // Scroll to highlighted verse after render
-            if (highlightVerse) {
-                setTimeout(() => {
-                    const highlightEl = document.getElementById(`krv-verse-${highlightVerse}`);
-                    if (highlightEl) {
-                        highlightEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 100);
-            }
+            if (highlightVerse) setTimeout(() => document.getElementById(`krv-${highlightVerse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
         }
 
-        function navigateChapter(chapter) {
-            if (currentReaderState) {
-                openReader(currentReaderState.asvBookShort, chapter, null, 'ASV');
-            }
-        }
+        function navigateChapter(ch) { if (currentReaderState) openReader(currentReaderState.asvBookShort, ch, null, 'ASV'); }
 
         function backToSearch() {
             currentView = 'search';
-            if (lastSearchResults) {
-                renderResults(lastSearchResults);
-            } else {
-                // Show initial empty state
-                resultsArea.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">✨</div>
-                        <h2 class="empty-title">Discover Scripture</h2>
-                        <p class="empty-description">
-                            Search by <strong>keyword</strong> (exact word match) or by <strong>meaning</strong> (semantic).
-                            Our AI automatically detects your intent and uses the best search method.
-                        </p>
-                            <div class="suggestions">
-                                <p class="suggestions-title">🧠 Semantic — search by meaning:</p>
-                                <div class="suggestion-chips">
-                                    <span class="suggestion-chip" data-query="사랑에 대한 말씀">사랑에 대한 말씀</span>
-                                    <span class="suggestion-chip" data-query="comfort in suffering">comfort in suffering</span>
-                                    <span class="suggestion-chip" data-query="God's faithfulness">God's faithfulness</span>
-                                    <span class="suggestion-chip" data-query="용서에 관한 구절">용서에 관한 구절</span>
-                                </div>
-                                <p class="suggestions-title" style="margin-top: 16px;">🔤 Keyword — find specific words:</p>
-                                <div class="suggestion-chips">
-                                    <span class="suggestion-chip" data-query="가사라는 지명이 나오는 구절">가사라는 지명</span>
-                                    <span class="suggestion-chip" data-query="모세가 등장하는 구절">모세가 등장하는</span>
-                                    <span class="suggestion-chip" data-query="다윗이라는 인물">다윗이라는 인물</span>
-                                    <span class="suggestion-chip" data-query="verses containing shepherd">containing shepherd</span>
-                                </div>
-                            </div>
-                    </div>
-                `;
-                // Re-attach suggestion chip handlers
-                document.querySelectorAll('.suggestion-chip').forEach(chip => {
-                    chip.addEventListener('click', () => {
-                        searchInput.value = chip.dataset.query;
-                        performSearch();
-                    });
-                });
-            }
+            if (lastSearchResults) renderResults(lastSearchResults);
+            else location.reload();
         }
 
-        // Handle browser back button
-        window.addEventListener('popstate', () => {
-            if (currentView === 'reader') {
-                backToSearch();
-            }
-        });
-
-        // Add fade-in animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Handle URL query parameter on page load
-        function handleUrlQuery() {
-            const params = new URLSearchParams(window.location.search);
-            const query = params.get('q');
-            if (query) {
-                searchInput.value = query;
-                // Clear the URL parameter without reloading
-                window.history.replaceState({}, document.title, window.location.pathname);
-                // Execute the search/reference
-                setTimeout(() => handleSearch(), 100);
-            }
-        }
-
-        // Focus search input on load and check for query param
-        searchInput.focus();
-        handleUrlQuery();
+        // URL query param
+        const urlQ = new URLSearchParams(window.location.search).get('q');
+        if (urlQ) { searchInput.value = urlQ; history.replaceState({}, '', location.pathname); setTimeout(handleSearch, 100); }
+        else searchInput.focus();
     </script>
 </body>
 </html>
