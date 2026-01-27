@@ -26,11 +26,11 @@ spec:
           env:
             - name: JAVA_OPTS
               value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
-            # GCS embedding store for faster cold starts
-            - name: EMBEDDING_GCS_ENABLED
+            # SQLite embedding store (pre-built and included in Docker image)
+            - name: EMBEDDING_SQLITE_ENABLED
               value: "true"
-            - name: EMBEDDING_GCS_BUCKET
-              value: "bible-ai-485118-embeddings"
+            - name: EMBEDDING_SQLITE_PATH
+              value: "classpath:embeddings/bible-embeddings.db"
           # Startup probe - waits for app to be ready (up to 15 minutes for first-time embedding generation)
           startupProbe:
             httpGet:

@@ -51,19 +51,10 @@ RUN if [ ! -f src/main/resources/models/multilingual-minilm/tokenizer.json ]; th
       echo "Tokenizer already exists"; \
     fi
 
-# Compile first (needed for embedding generation)
-RUN mvn compile -DskipTests -B
-
-# Generate SQLite embedding database (pre-computed for instant cold start)
-# This takes ~3-5 minutes but saves 2+ minutes on every cold start
-RUN echo "Generating SQLite embedding database..." && \
-    mkdir -p src/main/resources/embeddings && \
-    mvn exec:java \
-      -Dexec.mainClass="io.github.nicechester.biblesearch.tool.EmbeddingDatabaseBuilder" \
-      -Dexec.args="--output src/main/resources/embeddings/bible-embeddings.db" \
-      -q && \
-    ls -lh src/main/resources/embeddings/ && \
-    echo "Embedding database generated successfully"
+# Copy pre-built SQLite embedding database (downloaded by Cloud Build from GCS)
+# This is much faster than generating embeddings during build (~10-20s vs ~3-5 min)
+# To update embeddings: ./build-embeddings.sh && ./upload-embeddings.sh
+COPY src/main/resources/embeddings/bible-embeddings.db src/main/resources/embeddings/
 
 # Build the application (includes embedding database in JAR)
 RUN mvn package -DskipTests -B
