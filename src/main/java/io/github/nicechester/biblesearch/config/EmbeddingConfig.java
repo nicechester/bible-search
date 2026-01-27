@@ -10,6 +10,8 @@ import dev.langchain4j.model.embedding.onnx.PoolingMode;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.data.segment.TextSegment;
+import io.github.nicechester.biblesearch.store.SqliteEmbeddingStore;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +20,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,9 +35,10 @@ import java.nio.file.StandardCopyOption;
  * - 384-dimensional embeddings
  * - ONNX Runtime for local CPU inference
  * 
- * GCS Persistence:
- * - If enabled, tries to load pre-computed embeddings from GCS
- * - Dramatically reduces cold start time (seconds vs minutes)
+ * Embedding Store Priority:
+ * 1. SQLite (if enabled) - fastest cold start, pre-built database in Docker image
+ * 2. GCS (if enabled) - network load, still fast
+ * 3. In-memory with generation - slowest, for development only
  */
 @Slf4j
 @Configuration
@@ -48,6 +52,14 @@ public class EmbeddingConfig {
     @Value("${bible.embedding.tokenizer-path:classpath:models/multilingual-minilm/tokenizer.json}")
     private String tokenizerPath;
 
+    // SQLite configuration (preferred for production)
+    @Value("${bible.embedding.sqlite.enabled:false}")
+    private boolean sqliteEnabled;
+
+    @Value("${bible.embedding.sqlite.path:classpath:embeddings/bible-embeddings.db}")
+    private String sqlitePath;
+
+    // GCS configuration (fallback)
     @Value("${bible.embedding.gcs.enabled:false}")
     private boolean gcsEnabled;
 
@@ -57,8 +69,9 @@ public class EmbeddingConfig {
     @Value("${bible.embedding.gcs.blob-name:embeddings/bible-embeddings.json}")
     private String gcsBlobName;
 
-    // Track if store was loaded from GCS (used by stats)
-    private boolean loadedFromGcs = false;
+    // Track how store was loaded (used by stats)
+    @Getter
+    private String loadedFrom = "generated";
 
     public EmbeddingConfig(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -118,22 +131,91 @@ public class EmbeddingConfig {
     }
 
     /**
-     * In-memory embedding store for Bible verse vectors.
-     * If GCS is enabled, tries to load pre-computed embeddings from GCS first.
+     * Embedding store for Bible verse vectors.
+     * Priority: SQLite (fastest) → GCS (network) → In-memory (slowest)
      */
     @Bean
     public EmbeddingStore<TextSegment> embeddingStore() {
-        // Try to load from GCS if enabled
-        if (gcsEnabled && gcsBucket != null && !gcsBucket.isBlank()) {
-            EmbeddingStore<TextSegment> loadedStore = tryLoadFromGcs();
-            if (loadedStore != null) {
-                loadedFromGcs = true;
-                return loadedStore;
+        // Priority 1: Try SQLite (fastest - local file, no network)
+        if (sqliteEnabled) {
+            EmbeddingStore<TextSegment> sqliteStore = tryLoadFromSqlite();
+            if (sqliteStore != null) {
+                loadedFrom = "sqlite";
+                return sqliteStore;
             }
         }
         
+        // Priority 2: Try GCS (network, but pre-computed)
+        if (gcsEnabled && gcsBucket != null && !gcsBucket.isBlank()) {
+            EmbeddingStore<TextSegment> gcsStore = tryLoadFromGcs();
+            if (gcsStore != null) {
+                loadedFrom = "gcs";
+                return gcsStore;
+            }
+        }
+        
+        // Priority 3: Empty in-memory store (will generate embeddings)
         log.info("Initializing empty in-memory embedding store (will generate embeddings)");
+        loadedFrom = "generated";
         return new InMemoryEmbeddingStore<>();
+    }
+
+    /**
+     * Try to load embedding store from SQLite database.
+     */
+    private EmbeddingStore<TextSegment> tryLoadFromSqlite() {
+        try {
+            log.info("Checking for SQLite embedding database: {}", sqlitePath);
+            
+            String resolvedPath = sqlitePath;
+            
+            // Handle classpath resources
+            if (sqlitePath.startsWith("classpath:")) {
+                String resourcePath = sqlitePath.substring("classpath:".length());
+                Resource resource = resourceLoader.getResource(sqlitePath);
+                
+                if (!resource.exists()) {
+                    log.info("SQLite database not found in classpath: {}", resourcePath);
+                    return null;
+                }
+                
+                // Extract to temp file (SQLite needs file access)
+                try (InputStream is = resource.getInputStream()) {
+                    Path tempFile = Files.createTempFile("bible-embeddings", ".db");
+                    Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+                    resolvedPath = tempFile.toString();
+                    log.info("Extracted SQLite database from classpath to: {}", resolvedPath);
+                }
+            } else {
+                // Check if file exists
+                if (!Files.exists(Path.of(resolvedPath))) {
+                    log.info("SQLite database file not found: {}", resolvedPath);
+                    return null;
+                }
+            }
+            
+            long startTime = System.currentTimeMillis();
+            
+            SqliteEmbeddingStore store = new SqliteEmbeddingStore(resolvedPath);
+            
+            if (!store.hasEmbeddings()) {
+                log.info("SQLite database is empty");
+                store.close();
+                return null;
+            }
+            
+            // Load embeddings into memory cache for fast searching
+            store.loadCache();
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("Loaded {} embeddings from SQLite in {}ms", store.size(), duration);
+            
+            return store;
+            
+        } catch (Exception e) {
+            log.warn("Failed to load embeddings from SQLite: {} - trying next option", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -170,7 +252,11 @@ public class EmbeddingConfig {
         }
     }
 
+    /**
+     * @deprecated Use {@link #getLoadedFrom()} instead
+     */
+    @Deprecated
     public boolean isLoadedFromGcs() {
-        return loadedFromGcs;
+        return "gcs".equals(loadedFrom) || "sqlite".equals(loadedFrom);
     }
 }
