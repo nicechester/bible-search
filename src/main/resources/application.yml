@@ -14,7 +14,11 @@ bible:
     tokenizer-path: ${EMBEDDING_TOKENIZER_PATH:classpath:models/multilingual-minilm/tokenizer.json}
     chunk-size: 500
     chunk-overlap: 50
-    # GCS persistence for faster cold starts
+    # SQLite persistence (preferred for production - fastest cold start)
+    sqlite:
+      enabled: ${EMBEDDING_SQLITE_ENABLED:false}
+      path: ${EMBEDDING_SQLITE_PATH:classpath:embeddings/bible-embeddings.db}
+    # GCS persistence (fallback if SQLite not available)
     gcs:
       enabled: ${EMBEDDING_GCS_ENABLED:false}
       bucket: ${EMBEDDING_GCS_BUCKET:}

@@ -51,8 +51,22 @@ RUN if [ ! -f src/main/resources/models/multilingual-minilm/tokenizer.json ]; th
       echo "Tokenizer already exists"; \
     fi
 
-# Build the application
-RUN mvn clean package -DskipTests -B
+# Compile first (needed for embedding generation)
+RUN mvn compile -DskipTests -B
+
+# Generate SQLite embedding database (pre-computed for instant cold start)
+# This takes ~3-5 minutes but saves 2+ minutes on every cold start
+RUN echo "Generating SQLite embedding database..." && \
+    mkdir -p src/main/resources/embeddings && \
+    mvn exec:java \
+      -Dexec.mainClass="io.github.nicechester.biblesearch.tool.EmbeddingDatabaseBuilder" \
+      -Dexec.args="--output src/main/resources/embeddings/bible-embeddings.db" \
+      -q && \
+    ls -lh src/main/resources/embeddings/ && \
+    echo "Embedding database generated successfully"
+
+# Build the application (includes embedding database in JAR)
+RUN mvn package -DskipTests -B
 
 # =============================================================================
 # Stage 2: Create lightweight runtime image
@@ -77,6 +91,10 @@ USER appuser
 # Expose port (Cloud Run uses PORT environment variable, default 8080)
 EXPOSE 8080
 
+# Enable SQLite embedding store (pre-built in image for instant cold start)
+ENV EMBEDDING_SQLITE_ENABLED=true
+ENV EMBEDDING_SQLITE_PATH=classpath:embeddings/bible-embeddings.db
+
 # JVM options optimized for containers and Cloud Run
 # - Uses container-aware memory settings
 # - Optimized for startup time with CDS (Class Data Sharing)
@@ -92,5 +110,5 @@ ENV JAVA_OPTS="-XX:+UseContainerSupport \
 
 # Run the application
 # Cloud Run sets PORT environment variable (default 8080)
-# Note: This app requires ~2GB memory and 2 CPU for embedding generation at startup
+# Note: With SQLite embeddings, cold start is ~5-10 seconds (vs 2+ minutes without)
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar app.jar"]
