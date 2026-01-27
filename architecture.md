@@ -28,8 +28,9 @@ Instead of a single LLM call, the system now follows a two-stage pipeline:
 | **Framework** | Spring Boot 3.x                                 |
 | **AI Orchestration** | LangChain4j                                     |
 | **Inference Engine** | **ONNX Runtime** (Local CPU)                    |
-| **Vector Store** | `InMemoryEmbeddingStore` (with JSON/File persistence) |
+| **Vector Store** | SQLite-backed `EmbeddingStore` (pre-built, ~127MB) |
 | **Data Source** | Bible JSON/CSV (Pre-indexed)                    |
+| **Deployment** | Google Cloud Run (scale 0-3)                    |
 
 ---
 
@@ -59,7 +60,33 @@ Instead of a single LLM call, the system now follows a two-stage pipeline:
 
 ---
 
-### 6. Korean Language Support (Multilingual Expansion)
+## 6. Embedding & Deployment Workflow
+
+The Bible corpus is fixed, so embeddings are pre-built once and reused across all deployments.
+
+```mermaid
+flowchart TB
+    subgraph Local ["Local (one-time)"]
+        A[build-embeddings.sh<br/>~3-5 min] --> B[upload-embeddings.sh]
+    end
+    
+    subgraph GCP ["Google Cloud"]
+        C[(GCS Bucket<br/>bible-embeddings.db)] --> D[Cloud Build<br/>downloads ~10-20s]
+        D --> E[Docker Image<br/>with embeddings]
+        E --> F[Cloud Run<br/>scale 0-3]
+    end
+    
+    B --> C
+```
+
+**Key advantages:**
+- **Fast builds:** Cloud Build downloads pre-built embeddings (~10-20s) instead of generating them (~24 min)
+- **Scale to zero:** Cold starts are fast (~500ms) since embeddings are baked into the image
+- **Cost efficient:** No always-on instances needed; pay only for actual requests
+
+---
+
+### 7. Korean Language Support (Multilingual Expansion)
 To support Korean, the system must use multilingual models in ONNX format:
 
 - **Retriever Model:** `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
