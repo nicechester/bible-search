@@ -1,4 +1,15 @@
 steps:
+  # Download pre-built embedding database from GCS (avoids slow embedding generation in Docker)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        mkdir -p src/main/resources/embeddings
+        gsutil cp gs://bible-ai-485118-embeddings/embeddings/bible-embeddings.db \
+          src/main/resources/embeddings/bible-embeddings.db
+        ls -lh src/main/resources/embeddings/
+
   # Build the container image (--no-cache ensures latest code is used)
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '--no-cache', '-t', 'gcr.io/$PROJECT_ID/bible-search:$COMMIT_SHA', '.']
