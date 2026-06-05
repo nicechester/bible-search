@@ -84,7 +84,7 @@ public class EmbeddingConfig {
      */
     @Bean
     public EmbeddingModel embeddingModel() throws IOException {
-        log.info("Initializing multilingual embedding model (paraphrase-multilingual-MiniLM-L12-v2)");
+        log.info("Initializing BGE-M3-Ko embedding model (bge-m3-ko-onnx-optimized)");
         
         // Extract resources to temp files if they're classpath resources
         Path onnxModelPath = extractResourceToTempFile(modelPath, "model", ".onnx");
@@ -93,14 +93,14 @@ public class EmbeddingConfig {
         log.info("Loading ONNX model from: {}", onnxModelPath);
         log.info("Loading tokenizer from: {}", tokenizerFilePath);
         
-        // Use MEAN pooling for sentence-transformers compatibility
+        // Use CLS pooling per BGE-M3-Ko model architecture
         OnnxEmbeddingModel model = new OnnxEmbeddingModel(
             onnxModelPath,
             tokenizerFilePath,
-            PoolingMode.MEAN
+            PoolingMode.CLS
         );
         
-        log.info("Multilingual embedding model loaded successfully (384 dimensions)");
+        log.info("BGE-M3-Ko embedding model loaded successfully (1024 dimensions)");
         return model;
     }
 

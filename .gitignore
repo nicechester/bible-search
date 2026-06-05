@@ -56,8 +56,10 @@ logs/
 # ONNX model files (large binary files)
 *.onnx
 
-# SQLite embedding database (generated, ~127MB)
+# SQLite embedding database (generated, ~400MB)
 src/main/resources/embeddings/*.db
+src/main/resources/embeddings/*.db-shm
+src/main/resources/embeddings/*.db-wal
 
 # Package files
 *.jar

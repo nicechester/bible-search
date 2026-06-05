@@ -105,7 +105,7 @@ public class BibleDataService {
         try (InputStream inputStream = resource.getInputStream()) {
             JsonNode root = objectMapper.readTree(inputStream);
 
-            String version = root.has("version") ? root.get("version").asText() : defaultVersion;
+            String version = defaultVersion;
             log.info("Loading {} Bible from: {}", version, jsonPath);
 
             JsonNode booksNode = root.get("books");

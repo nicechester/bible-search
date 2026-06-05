@@ -10,13 +10,13 @@ bible:
   
   # Embedding configuration (Multilingual model for Korean + English)
   embedding:
-    model-path: ${EMBEDDING_MODEL_PATH:classpath:models/multilingual-minilm/model.onnx}
-    tokenizer-path: ${EMBEDDING_TOKENIZER_PATH:classpath:models/multilingual-minilm/tokenizer.json}
+    model-path: ${EMBEDDING_MODEL_PATH:classpath:models/bge-m3-ko/model.onnx}
+    tokenizer-path: ${EMBEDDING_TOKENIZER_PATH:classpath:models/bge-m3-ko/tokenizer.json}
     chunk-size: 500
     chunk-overlap: 50
     # SQLite persistence (preferred for production - fastest cold start)
     sqlite:
-      enabled: ${EMBEDDING_SQLITE_ENABLED:false}
+      enabled: ${EMBEDDING_SQLITE_ENABLED:true}
       path: ${EMBEDDING_SQLITE_PATH:classpath:embeddings/bible-embeddings.db}
     # GCS persistence (fallback if SQLite not available)
     gcs:

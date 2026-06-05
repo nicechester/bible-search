@@ -161,7 +161,9 @@ public class SqliteEmbeddingStore implements EmbeddingStore<TextSegment> {
                 
                 float[] vector = bytesToFloats(embeddingBytes);
                 Embedding embedding = Embedding.from(vector);
-                TextSegment segment = TextSegment.from(text);
+                dev.langchain4j.data.document.Metadata meta = new dev.langchain4j.data.document.Metadata();
+                if (metadata != null) meta.put("ref", metadata);
+                TextSegment segment = TextSegment.from(text, meta);
                 
                 embeddingCache.add(new StoredEmbedding(id, segment, embedding));
             }

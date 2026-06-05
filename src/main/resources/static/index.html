@@ -133,28 +133,63 @@
         let currentReaderState = null;
 
         // Book mappings
-        const BOOK_MAP = {
-            'genesis': { short: 'Gen', version: 'ASV' }, 'exodus': { short: 'Ex', version: 'ASV' },
-            'john': { short: 'John', version: 'ASV' }, 'matthew': { short: 'Matt', version: 'ASV' },
-            'mark': { short: 'Mark', version: 'ASV' }, 'luke': { short: 'Luke', version: 'ASV' },
-            'romans': { short: 'Rom', version: 'ASV' }, 'psalms': { short: 'Ps', version: 'ASV' },
-            'psalm': { short: 'Ps', version: 'ASV' }, 'ps': { short: 'Ps', version: 'ASV' },
-            'gen': { short: 'Gen', version: 'ASV' }, 'ex': { short: 'Ex', version: 'ASV' },
-            'jn': { short: 'John', version: 'ASV' }, 'matt': { short: 'Matt', version: 'ASV' },
-            'rom': { short: 'Rom', version: 'ASV' }, 'rev': { short: 'Rev', version: 'ASV' },
-            '1 cor': { short: '1 Cor', version: 'ASV' }, '1cor': { short: '1 Cor', version: 'ASV' },
-            '창세기': { short: '창', version: 'KRV' }, '출애굽기': { short: '출', version: 'KRV' },
-            '요한복음': { short: '요', version: 'KRV' }, '마태복음': { short: '마', version: 'KRV' },
-            '로마서': { short: '롬', version: 'KRV' }, '시편': { short: '시', version: 'KRV' },
-            '창': { short: '창', version: 'KRV' }, '출': { short: '출', version: 'KRV' },
-            '요': { short: '요', version: 'KRV' }, '마': { short: '마', version: 'KRV' },
-            '막': { short: '막', version: 'KRV' }, '눅': { short: '눅', version: 'KRV' },
-            '롬': { short: '롬', version: 'KRV' }, '시': { short: '시', version: 'KRV' },
-        };
+        const BOOK_MAP = (() => {
+            const map = {};
+            // English full names
+            const engFull = {
+                'genesis':'Gen','exodus':'Ex','leviticus':'Lev','numbers':'Num','deuteronomy':'Deut',
+                'joshua':'Josh','judges':'Judg','ruth':'Ruth','1 samuel':'1 Sam','2 samuel':'2 Sam',
+                '1 kings':'1 Kgs','2 kings':'2 Kgs','1 chronicles':'1 Chr','2 chronicles':'2 Chr',
+                'ezra':'Ezra','nehemiah':'Neh','esther':'Esth','job':'Job','psalms':'Ps','psalm':'Ps',
+                'proverbs':'Prov','ecclesiastes':'Eccl','song of solomon':'Song','isaiah':'Isa',
+                'jeremiah':'Jer','lamentations':'Lam','ezekiel':'Ezek','daniel':'Dan','hosea':'Hos',
+                'joel':'Joel','amos':'Amos','obadiah':'Obad','jonah':'Jonah','micah':'Mic',
+                'nahum':'Nah','habakkuk':'Hab','zephaniah':'Zeph','haggai':'Hag','zechariah':'Zech',
+                'malachi':'Mal','matthew':'Matt','mark':'Mark','luke':'Luke','john':'John','acts':'Acts',
+                'romans':'Rom','1 corinthians':'1 Cor','2 corinthians':'2 Cor','galatians':'Gal',
+                'ephesians':'Eph','philippians':'Phil','colossians':'Col','1 thessalonians':'1 Thess',
+                '2 thessalonians':'2 Thess','1 timothy':'1 Tim','2 timothy':'2 Tim','titus':'Titus',
+                'philemon':'Philem','hebrews':'Heb','james':'James','1 peter':'1 Pet','2 peter':'2 Pet',
+                '1 john':'1 John','2 john':'2 John','3 john':'3 John','jude':'Jude','revelation':'Rev'
+            };
+            for (const [full, short] of Object.entries(engFull)) {
+                map[full] = { short, version: 'ASV' };
+                map[short.toLowerCase()] = { short, version: 'ASV' };
+                map[short.toLowerCase().replace(/\s/g,'')] = { short, version: 'ASV' };
+            }
+            // Korean full names & shorts from ASV_TO_KRV
+            const krvFull = {
+                '창세기':'창','출애굽기':'출','레위기':'레','민수기':'민','신명기':'신','여호수아':'수',
+                '사사기':'삿','룻기':'룻','사무엘상':'삼상','사무엘하':'삼하','열왕기상':'왕상','열왕기하':'왕하',
+                '역대상':'대상','역대하':'대하','에스라':'스','느헤미야':'느','에스더':'에','욥기':'욥',
+                '시편':'시','잠언':'잠','전도서':'전','아가':'아','이사야':'사','예레미야':'렘','예레미야애가':'애',
+                '에스겔':'겔','다니엘':'단','호세아':'호','요엘':'욜','아모스':'암','오바댜':'옵','요나':'욘',
+                '미가':'미','나훔':'나','하박국':'합','스바냐':'습','학개':'학','스가랴':'슥','말라기':'말',
+                '마태복음':'마','마가복음':'막','누가복음':'눅','요한복음':'요','사도행전':'행','로마서':'롬',
+                '고린도전서':'고전','고린도후서':'고후','갈라디아서':'갈','에베소서':'엡','빌립보서':'빌',
+                '골로새서':'골','데살로니가전서':'살전','데살로니가후서':'살후','디모데전서':'딤전',
+                '디모데후서':'딤후','디도서':'딛','빌레몬서':'몬','히브리서':'히','야고보서':'약',
+                '베드로전서':'벧전','베드로후서':'벧후','요한일서':'요일','요한이서':'요이','요한삼서':'요삼',
+                '유다서':'유','요한계시록':'계'
+            };
+            for (const [full, short] of Object.entries(krvFull)) {
+                map[full] = { short, version: 'KRV' };
+                map[short] = { short, version: 'KRV' };
+            }
+            return map;
+        })();
 
         const ASV_TO_KRV = {
-            'Gen': '창', 'Ex': '출', 'Ps': '시', 'Matt': '마', 'Mark': '막',
-            'Luke': '눅', 'John': '요', 'Rom': '롬', 'Rev': '계', '1 Cor': '고전'
+            'Gen':'창','Ex':'출','Lev':'레','Num':'민','Deut':'신','Josh':'수','Judg':'삿','Ruth':'룻',
+            '1 Sam':'삼상','2 Sam':'삼하','1 Kgs':'왕상','2 Kgs':'왕하','1 Chr':'대상','2 Chr':'대하',
+            'Ezra':'스','Neh':'느','Esth':'에','Job':'욥','Ps':'시','Prov':'잠','Eccl':'전','Song':'아',
+            'Isa':'사','Jer':'렘','Lam':'애','Ezek':'겔','Dan':'단','Hos':'호','Joel':'욜','Amos':'암',
+            'Obad':'옵','Jonah':'욘','Mic':'미','Nah':'나','Hab':'합','Zeph':'습','Hag':'학','Zech':'슥','Mal':'말',
+            'Matt':'마','Mark':'막','Luke':'눅','John':'요','Acts':'행','Rom':'롬',
+            '1 Cor':'고전','2 Cor':'고후','Gal':'갈','Eph':'엡','Phil':'빌','Col':'골',
+            '1 Thess':'살전','2 Thess':'살후','1 Tim':'딤전','2 Tim':'딤후','Titus':'딛','Philem':'몬',
+            'Heb':'히','James':'약','1 Pet':'벧전','2 Pet':'벧후','1 John':'요일','2 John':'요이','3 John':'요삼',
+            'Jude':'유','Rev':'계'
         };
         const KRV_TO_ASV = Object.fromEntries(Object.entries(ASV_TO_KRV).map(([k,v])=>[v,k]));
 

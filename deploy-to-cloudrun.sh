@@ -40,24 +40,24 @@ if [ ! -f "pom.xml" ]; then
 fi
 
 # 2. Check if ONNX model exists
-if [ ! -f "src/main/resources/models/multilingual-minilm/model.onnx" ]; then
+if [ ! -f "src/main/resources/models/bge-m3-ko/model.onnx" ]; then
     echo "❌ Error: ONNX model not found!"
     echo "   Download the model first:"
     echo ""
-    echo "   mkdir -p src/main/resources/models/multilingual-minilm"
-    echo "   curl -L -o src/main/resources/models/multilingual-minilm/model.onnx \\"
-    echo "     'https://huggingface.co/nicekchester/paraphrase-multilingual-MiniLM-L12-v2-onnx/resolve/main/model_quantized.onnx'"
+    echo "   mkdir -p src/main/resources/models/bge-m3-ko"
+    echo "   curl -L -o src/main/resources/models/bge-m3-ko/model.onnx \\"
+    echo "     'https://huggingface.co/55fivefive/bge-m3-ko-onnx-optimized/resolve/main/onnx/model_int8.onnx'"
     echo ""
     exit 1
 fi
 
 # 3. Check if tokenizer exists
-if [ ! -f "src/main/resources/models/multilingual-minilm/tokenizer.json" ]; then
+if [ ! -f "src/main/resources/models/bge-m3-ko/tokenizer.json" ]; then
     echo "❌ Error: Tokenizer not found!"
     echo "   Download the tokenizer first:"
     echo ""
-    echo "   curl -L -o src/main/resources/models/multilingual-minilm/tokenizer.json \\"
-    echo "     'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer.json'"
+    echo "   curl -L -o src/main/resources/models/bge-m3-ko/tokenizer.json \\"
+    echo "     'https://huggingface.co/55fivefive/bge-m3-ko-onnx-optimized/resolve/main/tokenizer.json'"
     echo ""
     exit 1
 fi

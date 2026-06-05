@@ -5,12 +5,12 @@
 # =============================================================================
 # Stage 1: Build the application with Maven
 # =============================================================================
-FROM eclipse-temurin:21-jdk AS builder
+FROM maven:3.9.11-eclipse-temurin-25 AS builder
 
 WORKDIR /build
 
 # Install Maven and curl
-RUN apt-get update && apt-get install -y maven curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Copy pom.xml first to leverage Docker layer caching for dependencies
 COPY pom.xml .
@@ -19,34 +19,28 @@ RUN mvn dependency:go-offline -B
 # Copy source code
 COPY src ./src
 
-# Download ONNX model if not present (it's in .gitignore so won't be in repo)
-# Using the official sentence-transformers model from HuggingFace
-RUN mkdir -p src/main/resources/models/multilingual-minilm && \
-    if [ ! -f src/main/resources/models/multilingual-minilm/model.onnx ] || [ $(stat -c%s src/main/resources/models/multilingual-minilm/model.onnx 2>/dev/null || echo 0) -lt 1000000 ]; then \
-      echo "Downloading ONNX model from HuggingFace..." && \
-      curl -fSL --retry 3 --retry-delay 5 -o src/main/resources/models/multilingual-minilm/model.onnx \
-        'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/onnx/model.onnx' && \
-      MODEL_SIZE=$(stat -c%s src/main/resources/models/multilingual-minilm/model.onnx) && \
+# Download ONNX model if not present
+RUN mkdir -p src/main/resources/models/bge-m3-ko && \
+    if [ ! -f src/main/resources/models/bge-m3-ko/model.onnx ] || [ $(stat -c%s src/main/resources/models/bge-m3-ko/model.onnx 2>/dev/null || echo 0) -lt 1000000 ]; then \
+      echo "Downloading BGE-M3-Ko ONNX model from HuggingFace..." && \
+      curl -fSL --retry 3 --retry-delay 5 -o src/main/resources/models/bge-m3-ko/model.onnx \
+        'https://huggingface.co/55fivefive/bge-m3-ko-onnx-optimized/resolve/main/onnx/model_int8.onnx' && \
+      MODEL_SIZE=$(stat -c%s src/main/resources/models/bge-m3-ko/model.onnx) && \
       echo "Model downloaded: ${MODEL_SIZE} bytes" && \
       if [ "$MODEL_SIZE" -lt 10000000 ]; then \
         echo "ERROR: Model file too small, download may have failed" && \
-        cat src/main/resources/models/multilingual-minilm/model.onnx && \
         exit 1; \
       fi; \
     else \
       echo "ONNX model already exists"; \
     fi
 
-# Download tokenizer files if not present
-RUN if [ ! -f src/main/resources/models/multilingual-minilm/tokenizer.json ]; then \
-      echo "Downloading tokenizer files..." && \
-      curl -fSL --retry 3 -o src/main/resources/models/multilingual-minilm/tokenizer.json \
-        'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer.json' && \
-      curl -fSL --retry 3 -o src/main/resources/models/multilingual-minilm/tokenizer_config.json \
-        'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer_config.json' && \
-      curl -fSL --retry 3 -o src/main/resources/models/multilingual-minilm/special_tokens_map.json \
-        'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/special_tokens_map.json' && \
-      echo "Tokenizer files downloaded successfully"; \
+# Download tokenizer if not present
+RUN if [ ! -f src/main/resources/models/bge-m3-ko/tokenizer.json ]; then \
+      echo "Downloading tokenizer..." && \
+      curl -fSL --retry 3 -o src/main/resources/models/bge-m3-ko/tokenizer.json \
+        'https://huggingface.co/55fivefive/bge-m3-ko-onnx-optimized/resolve/main/tokenizer.json' && \
+      echo "Tokenizer downloaded successfully"; \
     else \
       echo "Tokenizer already exists"; \
     fi
@@ -62,7 +56,7 @@ RUN mvn package -DskipTests -B
 # =============================================================================
 # Stage 2: Create lightweight runtime image
 # =============================================================================
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre-jammy
 
 WORKDIR /app
 

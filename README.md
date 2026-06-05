@@ -355,9 +355,9 @@ bible-search/
         │   ├── bible_asv.json             # English Bible (ASV)
         │   └── bible_krv.json             # Korean Bible (KRV)
         ├── models/
-        │   └── multilingual-minilm/       # Multilingual embedding model
-        │       ├── model.onnx             # ONNX model (113MB)
-        │       └── tokenizer.json         # HuggingFace tokenizer
+        │   └── bge-m3-ko/                 # Korean-optimized embedding model
+        │       ├── model.onnx             # ONNX model (570MB, gitignored)
+        │       └── tokenizer.json         # HuggingFace tokenizer (17MB, gitignored)
         └── static/
             └── index.html                 # Search UI
 ```
