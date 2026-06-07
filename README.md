@@ -1,5 +1,7 @@
 # Bible Search
 
+🔗 **[Try it live](https://nicechester.github.io/bible-search/)**
+
 A **local-first semantic Bible search** application that uses AI embeddings for meaning-based verse discovery. No LLM required — runs entirely on your CPU with zero API costs.
 
 ## Features
@@ -170,8 +172,8 @@ flowchart LR
 |-----------|------------|
 | **Framework** | Spring Boot 3.5.4 |
 | **AI Orchestration** | LangChain4j 1.2.0 |
-| **Embedding Model** | `paraphrase-multilingual-MiniLM-L12-v2` (ONNX, quantized) |
-| **Languages** | 50+ languages including Korean & English |
+| **Embedding Model** | `bge-m3-ko` (ONNX, optimized) |
+| **Languages** | Korean-optimized with English support |
 | **Inference Engine** | ONNX Runtime (CPU) |
 | **Vector Store** | In-Memory Embedding Store |
 | **Bible Data** | KRV (30,249 verses) + ASV (28,640 verses) |
@@ -184,51 +186,51 @@ flowchart LR
 
 ### 1. Download ONNX Model
 
-The multilingual embedding model (~113MB) is required but not included in the repository. Download it using one of these methods:
+The BGE-M3-Ko embedding model (~570MB) is required but not included in the repository. Download it using one of these methods:
 
 #### Option A: Using curl (Recommended)
 
 ```bash
 # Create model directory
-mkdir -p src/main/resources/models/multilingual-minilm
+mkdir -p src/main/resources/models/bge-m3-ko
 
-# Download quantized ONNX model
-curl -L -o src/main/resources/models/multilingual-minilm/model.onnx \
-  "https://huggingface.co/nicekchester/paraphrase-multilingual-MiniLM-L12-v2-onnx/resolve/main/model_quantized.onnx"
+# Download optimized ONNX model
+curl -L -o src/main/resources/models/bge-m3-ko/model.onnx \
+  "https://huggingface.co/nicekchester/bge-m3-ko-onnx-optimized/resolve/main/model.onnx"
 
 # Download tokenizer
-curl -L -o src/main/resources/models/multilingual-minilm/tokenizer.json \
-  "https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer.json"
+curl -L -o src/main/resources/models/bge-m3-ko/tokenizer.json \
+  "https://huggingface.co/BAAI/bge-m3/resolve/main/tokenizer.json"
 ```
 
 #### Option B: Using wget
 
 ```bash
-mkdir -p src/main/resources/models/multilingual-minilm
+mkdir -p src/main/resources/models/bge-m3-ko
 
-wget -O src/main/resources/models/multilingual-minilm/model.onnx \
-  "https://huggingface.co/nicekchester/paraphrase-multilingual-MiniLM-L12-v2-onnx/resolve/main/model_quantized.onnx"
+wget -O src/main/resources/models/bge-m3-ko/model.onnx \
+  "https://huggingface.co/nicekchester/bge-m3-ko-onnx-optimized/resolve/main/model.onnx"
 
-wget -O src/main/resources/models/multilingual-minilm/tokenizer.json \
-  "https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer.json"
+wget -O src/main/resources/models/bge-m3-ko/tokenizer.json \
+  "https://huggingface.co/BAAI/bge-m3/resolve/main/tokenizer.json"
 ```
 
 #### Option C: Manual Download
 
-1. Go to [HuggingFace Model Page](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)
-2. Download `tokenizer.json` from the Files tab
-3. For ONNX model, use the [ONNX converted version](https://huggingface.co/nicekchester/paraphrase-multilingual-MiniLM-L12-v2-onnx)
-4. Place files in `src/main/resources/models/multilingual-minilm/`
+1. Go to [HuggingFace Model Page](https://huggingface.co/nicekchester/bge-m3-ko-onnx-optimized)
+2. Download `model.onnx` from the Files tab
+3. Download `tokenizer.json` from [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3)
+4. Place files in `src/main/resources/models/bge-m3-ko/`
 
 #### Verify Downloads
 
 ```bash
 # Check file sizes
-ls -lh src/main/resources/models/multilingual-minilm/
+ls -lh src/main/resources/models/bge-m3-ko/
 
 # Expected output:
-# model.onnx      ~113MB (quantized INT8)
-# tokenizer.json  ~2MB
+# model.onnx      ~570MB (optimized)
+# tokenizer.json  ~17MB
 ```
 
 ### 2. Build and Run
@@ -354,10 +356,12 @@ bible-search/
         ├── bible/
         │   ├── bible_asv.json             # English Bible (ASV)
         │   └── bible_krv.json             # Korean Bible (KRV)
+        ├── embeddings/
+        │   └── bible-embeddings.db        # Pre-built SQLite embedding store (gitignored)
         ├── models/
         │   └── bge-m3-ko/                 # Korean-optimized embedding model
-        │       ├── model.onnx             # ONNX model (570MB, gitignored)
-        │       └── tokenizer.json         # HuggingFace tokenizer (17MB, gitignored)
+        │       ├── model.onnx             # ONNX model (~570MB, gitignored)
+        │       └── tokenizer.json         # HuggingFace tokenizer (~17MB, gitignored)
         └── static/
             └── index.html                 # Search UI
 ```
@@ -450,27 +454,26 @@ flowchart LR
 
 ## Korean Language Support
 
-The application uses `paraphrase-multilingual-MiniLM-L12-v2`, a multilingual sentence transformer that provides excellent Korean semantic search.
+The application uses `bge-m3-ko`, a Korean-optimized embedding model built on top of BAAI/bge-m3.
 
-### Multilingual Model Details
+### Model Details
 
 | Property | Value |
 |----------|-------|
-| **Model** | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` |
-| **Dimensions** | 384 |
-| **Languages** | 50+ (Korean, English, Chinese, Japanese, etc.) |
-| **Size** | ~113MB (quantized INT8) |
-| **Performance** | ~30-50ms per query |
-| **Token Limit** | 128 tokens (~50-100 words) |
+| **Model** | `nicekchester/bge-m3-ko-onnx-optimized` |
+| **Dimensions** | 1024 |
+| **Languages** | Korean (primary), English |
+| **Size** | ~570MB (optimized) |
+| **Pooling** | CLS pooling |
+| **Token Limit** | 512 tokens |
 
-### Why Multilingual?
+### Why BGE-M3-Ko?
 
-The English-only `all-MiniLM-L6-v2` model struggles with Korean text because:
-1. Korean uses a different character set (Hangul)
-2. Korean morphology differs significantly from English
-3. English-only tokenizers don't handle Korean particles well
-
-The multilingual model solves these issues by training on parallel corpora across 50+ languages.
+Compared to `paraphrase-multilingual-MiniLM-L12-v2`:
+- Significantly better Korean semantic understanding
+- Higher-dimensional embeddings (1024 vs 384) for more precise matching
+- Trained specifically on Korean corpora
+- Better handling of Korean morphology and particles
 
 ## Comparison with Bible-AI
 

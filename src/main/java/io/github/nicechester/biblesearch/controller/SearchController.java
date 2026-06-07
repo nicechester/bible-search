@@ -5,6 +5,7 @@ import io.github.nicechester.biblesearch.model.SearchResponse;
 import io.github.nicechester.biblesearch.model.VerseResult;
 import io.github.nicechester.biblesearch.service.BibleDataService;
 import io.github.nicechester.biblesearch.service.BibleSearchService;
+import io.github.nicechester.biblesearch.service.CommentaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ public class SearchController {
 
     private final BibleSearchService searchService;
     private final BibleDataService bibleDataService;
+    private final CommentaryService commentaryService;
 
     /**
      * Perform semantic search on Bible verses.
@@ -160,5 +162,13 @@ public class SearchController {
         }
         
         return ResponseEntity.ok(info);
+    }
+
+    @GetMapping("/commentary/{bookShort}/{chapter}/{verse}")
+    public ResponseEntity<List<CommentaryService.Commentary>> getCommentary(
+            @PathVariable String bookShort,
+            @PathVariable int chapter,
+            @PathVariable int verse) {
+        return ResponseEntity.ok(commentaryService.getCommentaries(bookShort, chapter, verse));
     }
 }
