@@ -32,6 +32,10 @@ bible:
     result-count: 5
     min-score: 0.3
 
+  # Commentary database
+  commentary:
+    path: ${COMMENTARY_PATH:classpath:commentaries/commentaries.sqlite}
+
 # Server configuration
 server:
   port: 8080
