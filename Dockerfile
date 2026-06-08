@@ -45,10 +45,11 @@ RUN if [ ! -f src/main/resources/models/bge-m3-ko/tokenizer.json ]; then \
       echo "Tokenizer already exists"; \
     fi
 
-# Copy pre-built SQLite embedding database (downloaded by Cloud Build from GCS)
-# This is much faster than generating embeddings during build (~10-20s vs ~3-5 min)
+# Copy pre-built SQLite databases
+# These are much faster than generating embeddings during build (~10-20s vs ~3-5 min)
 # To update embeddings: ./build-embeddings.sh && ./upload-embeddings.sh
 COPY src/main/resources/embeddings/bible-embeddings.db src/main/resources/embeddings/
+COPY src/main/resources/commentaries/commentaries.sqlite src/main/resources/commentaries/
 
 # Build the application (includes embedding database in JAR)
 RUN mvn package -DskipTests -B
