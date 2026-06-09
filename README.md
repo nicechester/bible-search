@@ -90,17 +90,16 @@ flowchart TD
         Q["love your neighbor<br/>하나님의 사랑"]
     end
 
-    subgraph Stage1["Stage 1: Bi-Encoder"]
-        E["Embed Query<br/>(384 dimensions)"]
+    subgraph Stage1["Stage 1: Bi-Encoder (Fast Retrieval)"]
+        E["Embed Query<br/>(1024 dimensions)"]
         V["Vector Search<br/>(Cosine Similarity)"]
         C["Top 50 Candidates"]
     end
 
-    subgraph Stage2["Stage 2: Re-ranking"]
-        K["Keyword Boost"]
-        L["Length Normalization"]
-        F["Version Filter"]
-        S["Score Threshold"]
+    subgraph Stage2["Stage 2: Re-ranking (Precision Scoring)"]
+        R{{"Cross-Encoder<br/>(BGE Reranker v2-m3)"}}
+        B["Score Blending<br/>(50% embedding +<br/>50% reranker)"]
+        F["Version Filter &<br/>Score Threshold"]
     end
 
     subgraph Output["📖 Search Results"]
@@ -112,13 +111,12 @@ flowchart TD
     Q --> E
     E --> V
     V --> C
-    C --> K
-    K --> L
-    L --> F
-    F --> S
-    S --> R1
-    S --> R2
-    S --> R3
+    C --> R
+    R --> B
+    B --> F
+    F --> R1
+    F --> R2
+    F --> R3
 
     style Input fill:#1a1a2e,stroke:#d4a373,color:#fff
     style Stage1 fill:#16213e,stroke:#58a6ff,color:#fff
@@ -142,8 +140,9 @@ flowchart LR
     end
 
     subgraph AI["AI Layer (ONNX)"]
-        EM["EmbeddingModel<br/>multilingual-MiniLM"]
-        ES["EmbeddingStore<br/>In-Memory"]
+        EM["Embedding Model<br/>BGE-M3-Ko<br/>(1024 dims)"]
+        RR["Reranker Model<br/>BGE Reranker v2-m3<br/>(Cross-Encoder)"]
+        ES["EmbeddingStore<br/>In-Memory/SQLite"]
     end
 
     subgraph Data["Data Layer"]
@@ -171,12 +170,13 @@ flowchart LR
 | Component | Technology |
 |-----------|------------|
 | **Framework** | Spring Boot 3.5.4 |
-| **AI Orchestration** | LangChain4j 1.2.0 |
-| **Embedding Model** | `bge-m3-ko` (ONNX, optimized) |
+| **AI Orchestration** | LangChain4j 1.16.1-beta26 |
+| **Embedding Model** | `bge-m3-ko` (ONNX, 1024-dim) |
+| **Reranking Model** | `bge-reranker-v2-m3` (Cross-Encoder, int8 quantized) |
 | **Languages** | Korean-optimized with English support |
-| **Inference Engine** | ONNX Runtime (CPU) |
-| **Vector Store** | In-Memory Embedding Store |
-| **Bible Data** | KRV (30,249 verses) + ASV (28,640 verses) |
+| **Inference Engine** | ONNX Runtime (CPU only) |
+| **Vector Store** | SQLite + In-Memory cache |
+| **Bible Data** | KRV (31,173 verses) + ASV (85,920 verses) |
 
 ## Quick Start
 
@@ -233,7 +233,31 @@ ls -lh src/main/resources/models/bge-m3-ko/
 # tokenizer.json  ~17MB
 ```
 
-### 2. Build and Run
+### 2. (Optional) Download Reranker Model
+
+For improved search accuracy with cross-encoder reranking:
+
+```bash
+# Create model directory
+mkdir -p src/main/resources/models/bge-reranker-v2-m3
+
+# Download quantized reranker model (544MB)
+wget -O src/main/resources/models/bge-reranker-v2-m3/model_quantized.onnx \
+  "https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/main/onnx/model_quantized.onnx"
+
+# Download tokenizer
+wget -O src/main/resources/models/bge-reranker-v2-m3/tokenizer.json \
+  "https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/main/tokenizer.json"
+```
+
+Then enable it by setting environment variable:
+```bash
+export RERANKER_ENABLED=true
+```
+
+> **Note**: Reranker is optional. Without it, search uses heuristic reranking. With it, uses BGE Reranker v2-m3 for higher accuracy (~2-3% improvement).
+
+### 3. Build and Run
 
 ```bash
 # Clone and navigate to project
@@ -244,6 +268,9 @@ mvn clean package -DskipTests
 
 # Run the application
 mvn spring-boot:run
+
+# Or with reranker enabled
+RERANKER_ENABLED=true mvn spring-boot:run
 ```
 
 ### Access the UI
@@ -290,6 +317,12 @@ Perform semantic search.
 }
 ```
 
+**Score Fields:**
+- `score`: Embedding similarity (0-1) from Stage 1 bi-encoder retrieval
+- `rerankedScore`: Final blended score (0-1) = 50% × embedding score + 50% × cross-encoder score
+  - Only present if reranker is enabled (`RERANKER_ENABLED=true`)
+  - Generally more accurate for relevance ranking
+
 ### GET /api/search
 Quick search via query parameters.
 
@@ -323,9 +356,32 @@ bible:
     asv-json-path: classpath:bible/bible_asv.json
   
   search:
-    candidate-count: 50    # Stage 1: candidates to retrieve
-    result-count: 5        # Stage 2: final results to return
-    min-score: 0.3         # Minimum relevance threshold
+    candidate-count: 50           # Stage 1: candidates to retrieve
+    result-count: 5               # Stage 2: final results to return
+    min-score: 0.3                # Minimum relevance threshold
+    embedding-weight: 0.5         # Stage 1 score weight
+    reranker-weight: 0.5          # Stage 2 reranker score weight
+  
+  reranker:
+    enabled: true                 # Enable/disable cross-encoder reranking
+    model-path: classpath:models/bge-reranker-v2-m3/model_quantized.onnx
+    tokenizer-path: classpath:models/bge-reranker-v2-m3/tokenizer.json
+    model-max-length: 512         # BGE Reranker token limit
+```
+
+### Environment Variables
+
+```bash
+# Enable/disable reranker (default: true)
+RERANKER_ENABLED=true
+
+# Override model paths
+RERANKER_MODEL_PATH=classpath:models/bge-reranker-v2-m3/model_quantized.onnx
+RERANKER_TOKENIZER_PATH=classpath:models/bge-reranker-v2-m3/tokenizer.json
+
+# Adjust score blending (default: 0.5 each)
+SEARCH_EMBEDDING_WEIGHT=0.6
+SEARCH_RERANKER_WEIGHT=0.4
 ```
 
 ## Project Structure
@@ -339,18 +395,22 @@ bible-search/
     ├── java/io/github/nicechester/biblesearch/
     │   ├── BibleSearchApplication.java
     │   ├── config/
-    │   │   └── EmbeddingConfig.java       # Embedding model & store beans
+    │   │   ├── EmbeddingConfig.java            # Embedding model & store setup
+    │   │   └── RerankingConfig.java            # Reranker service configuration
     │   ├── controller/
-    │   │   └── SearchController.java      # REST API endpoints
+    │   │   └── SearchController.java           # REST API endpoints
     │   ├── model/
-    │   │   ├── SearchIntent.java          # Intent detection logic
-    │   │   ├── SearchRequest.java         # API request model
-    │   │   ├── SearchResponse.java        # API response model
-    │   │   └── VerseResult.java           # Verse result with scores
+    │   │   ├── SearchIntent.java               # Intent detection logic
+    │   │   ├── SearchRequest.java              # API request model
+    │   │   ├── SearchResponse.java             # API response model
+    │   │   └── VerseResult.java                # Verse result with scores
     │   └── service/
-    │       ├── BibleDataService.java      # Bible JSON loading
-    │       ├── BibleSearchService.java    # Hybrid search logic
-    │       └── IntentClassifierService.java # Embedding-based intent detection
+    │       ├── BibleDataService.java           # Bible JSON loading
+    │       ├── BibleSearchService.java         # Hybrid search logic
+    │       ├── IntentClassifierService.java    # Embedding-based intent detection
+    │       ├── RerankingService.java           # Reranking interface
+    │       ├── HeuristicRerankingService.java  # Fallback heuristic reranking
+    │       └── OnnxRerankingService.java       # BGE Reranker ONNX implementation
     └── resources/
         ├── application.yml
         ├── bible/
@@ -359,9 +419,12 @@ bible-search/
         ├── embeddings/
         │   └── bible-embeddings.db        # Pre-built SQLite embedding store (gitignored)
         ├── models/
-        │   └── bge-m3-ko/                 # Korean-optimized embedding model
-        │       ├── model.onnx             # ONNX model (~570MB, gitignored)
-        │       └── tokenizer.json         # HuggingFace tokenizer (~17MB, gitignored)
+        │   ├── bge-m3-ko/                          # Embedding model (Stage 1)
+        │   │   ├── model.onnx                      # ONNX model (~560MB, gitignored)
+        │   │   └── tokenizer.json                  # HuggingFace tokenizer (~17MB)
+        │   └── bge-reranker-v2-m3/                 # Reranker model (Stage 2, optional)
+        │       ├── model_quantized.onnx            # Int8 quantized (~544MB, gitignored)
+        │       └── tokenizer.json                  # HuggingFace tokenizer (~16MB)
         └── static/
             └── index.html                 # Search UI
 ```
