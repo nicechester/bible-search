@@ -46,6 +46,7 @@ public class BibleSearchService {
     private final IntentClassifierService intentClassifier;
     private final ContextClassifierService contextClassifier;
     private final EmbeddingStoreService embeddingStoreService;
+    private final RerankingService rerankingService;
 
     @Value("${bible.search.candidate-count:50}")
     private int candidateCount;
@@ -55,6 +56,12 @@ public class BibleSearchService {
 
     @Value("${bible.search.min-score:0.3}")
     private double minScore;
+
+    @Value("${bible.search.embedding-weight:0.5}")
+    private double embeddingWeight;
+
+    @Value("${bible.search.reranker-weight:0.5}")
+    private double rerankerWeight;
 
     // Map from embedding store segment to verse key for fast lookup (unused with SQLite metadata)
     private final Map<String, String> segmentToVerseKey = new HashMap<>();
@@ -163,59 +170,75 @@ public class BibleSearchService {
     /**
      * Perform hybrid search: combines keyword and semantic results.
      */
-    private List<VerseResult> performHybridSearch(String query, String keyword, double threshold, 
+    private List<VerseResult> performHybridSearch(String query, String keyword, double threshold,
                                                    String versionFilter, ContextResult context, int maxResults) {
-        log.debug("Performing hybrid search: keyword='{}', query='{}' (context: {})", 
+        log.debug("Performing hybrid search: keyword='{}', query='{}' (context: {})",
                  keyword, query, context.hasContext() ? context.contextDescription() : "none");
-        
+
         // Get keyword matches first (these are exact matches, high priority)
         List<VerseData> keywordMatches = bibleDataService.searchByKeyword(keyword);
         Set<String> keywordMatchKeys = keywordMatches.stream()
             .filter(v -> context.matchesVerse(v.getBookShort(), v.getTestament()))
             .map(VerseData::getKey)
             .collect(Collectors.toSet());
-        
+
         // Get semantic matches
         List<ScoredVerse> semanticCandidates = retrieveCandidates(query, candidateCount);
-        
+
         // Build result list: keyword matches first, then semantic matches that aren't duplicates
-        List<VerseResult> results = new ArrayList<>();
-        
+        final List<VerseResult> results = new ArrayList<>();
+
         // Add keyword matches with boosted score
-        keywordMatches.stream()
+        List<VerseResult> keywordResults = keywordMatches.stream()
             .filter(v -> matchesVersion(v.getVersion(), versionFilter))
             .filter(v -> context.matchesVerse(v.getBookShort(), v.getTestament()))
             .limit(maxResults)
-            .forEach(v -> results.add(
-                bibleDataService.toVerseResult(v, 1.0)
-                    .toBuilder()
-                    .rerankedScore(1.0)
-                    .build()
-            ));
-        
+            .map(v -> bibleDataService.toVerseResult(v, 1.0)
+                .toBuilder()
+                .rerankedScore(1.0)
+                .build())
+            .collect(Collectors.toList());
+        results.addAll(keywordResults);
+
         // Add semantic matches that aren't already in keyword results
         if (results.size() < maxResults) {
-            String[] queryWords = query.toLowerCase().split("\\s+");
-            
-            semanticCandidates.stream()
+            List<ScoredVerse> semanticToRerank = semanticCandidates.stream()
                 .filter(sv -> !keywordMatchKeys.contains(sv.verse.getKey()))
                 .filter(sv -> matchesVersion(sv.verse.getVersion(), versionFilter))
                 .filter(sv -> context.matchesVerse(sv.verse.getBookShort(), sv.verse.getTestament()))
-                .map(sv -> {
-                    double rerankedScore = calculateRerankedScore(sv, queryWords);
-                    return new ScoredVerse(sv.verse, sv.score, rerankedScore);
-                })
-                .filter(sv -> sv.rerankedScore >= threshold)
-                .sorted((a, b) -> Double.compare(b.rerankedScore, a.rerankedScore))
-                .limit(maxResults - results.size())
-                .forEach(sv -> results.add(
-                    bibleDataService.toVerseResult(sv.verse, sv.score)
-                        .toBuilder()
-                        .rerankedScore(sv.rerankedScore)
-                        .build()
-                ));
+                .collect(Collectors.toList());
+
+            if (!semanticToRerank.isEmpty()) {
+                // Batch rerank the semantic candidates
+                List<String> passages = semanticToRerank.stream()
+                    .map(sv -> sv.verse.getText())
+                    .toList();
+                List<Double> rerankerScores = rerankingService.rerank(query, passages);
+
+                // Zip scores back and blend
+                List<VerseResult> semanticResults = new ArrayList<>();
+                for (int i = 0; i < semanticToRerank.size(); i++) {
+                    ScoredVerse sv = semanticToRerank.get(i);
+                    double rerankerScore = rerankerScores.get(i);
+                    double blendedScore = blendScores(sv.score, rerankerScore);
+
+                    if (blendedScore >= threshold) {
+                        semanticResults.add(
+                            bibleDataService.toVerseResult(sv.verse, sv.score)
+                                .toBuilder()
+                                .rerankedScore(blendedScore)
+                                .build()
+                        );
+                    }
+                }
+
+                // Sort by blended score and add up to maxResults
+                semanticResults.sort((a, b) -> Double.compare(b.getRerankedScore(), a.getRerankedScore()));
+                int remainingSlots = maxResults - results.size();
+                results.addAll(semanticResults.stream().limit(remainingSlots).collect(Collectors.toList()));
+            }
         }
-        
+
         return results;
     }
 
@@ -305,13 +328,9 @@ public class BibleSearchService {
 
     /**
      * Stage 2: Re-rank candidates and apply filters.
-     * 
-     * Re-ranking factors:
-     * 1. Original embedding score (semantic similarity)
-     * 2. Keyword boost (if query words appear in verse text)
-     * 3. Length normalization (prefer concise, focused verses)
-     * 4. Version filter (if specified)
-     * 5. Context filter (book scope)
+     *
+     * Uses RerankingService (ONNX or heuristic) to score passages,
+     * blends with embedding scores, and filters/sorts results.
      */
     private List<VerseResult> rerankAndFilter(
             List<ScoredVerse> candidates,
@@ -321,25 +340,38 @@ public class BibleSearchService {
             ContextResult context,
             int maxResults) {
 
-        String[] queryWords = query.toLowerCase().split("\\s+");
-
-        return candidates.stream()
-            // Filter by version if specified (with alias support)
+        // Pre-filter by version and context
+        List<ScoredVerse> filtered = candidates.stream()
             .filter(sv -> matchesVersion(sv.verse.getVersion(), versionFilter))
-            // Filter by context (book scope)
             .filter(sv -> context.matchesVerse(sv.verse.getBookShort(), sv.verse.getTestament()))
-            // Calculate re-ranked score
-            .map(sv -> {
-                double rerankedScore = calculateRerankedScore(sv, queryWords);
-                return new ScoredVerse(sv.verse, sv.score, rerankedScore);
-            })
-            // Filter by minimum score
-            .filter(sv -> sv.rerankedScore >= minScore)
-            // Sort by re-ranked score (descending)
+            .collect(Collectors.toList());
+
+        if (filtered.isEmpty()) {
+            return List.of();
+        }
+
+        // Batch rerank using RerankingService
+        List<String> passages = filtered.stream()
+            .map(sv -> sv.verse.getText())
+            .toList();
+        List<Double> rerankerScores = rerankingService.rerank(query, passages);
+
+        // Zip and blend scores
+        List<ScoredVerse> reranked = new ArrayList<>();
+        for (int i = 0; i < filtered.size(); i++) {
+            ScoredVerse sv = filtered.get(i);
+            double rerankerScore = rerankerScores.get(i);
+            double blendedScore = blendScores(sv.score, rerankerScore);
+
+            if (blendedScore >= minScore) {
+                reranked.add(new ScoredVerse(sv.verse, sv.score, blendedScore));
+            }
+        }
+
+        // Sort by blended score and limit
+        return reranked.stream()
             .sorted((a, b) -> Double.compare(b.rerankedScore, a.rerankedScore))
-            // Limit results
             .limit(maxResults)
-            // Convert to VerseResult
             .map(sv -> bibleDataService.toVerseResult(sv.verse, sv.score)
                 .toBuilder()
                 .rerankedScore(sv.rerankedScore)
@@ -348,35 +380,10 @@ public class BibleSearchService {
     }
 
     /**
-     * Calculate re-ranked score combining multiple signals.
+     * Blend embedding score with reranker score using configured weights.
      */
-    private double calculateRerankedScore(ScoredVerse sv, String[] queryWords) {
-        double baseScore = sv.score;
-        String verseText = sv.verse.getText().toLowerCase();
-
-        // Keyword boost: +0.1 for each query word found in verse
-        double keywordBoost = 0.0;
-        for (String word : queryWords) {
-            if (word.length() > 2 && verseText.contains(word)) {
-                keywordBoost += 0.05;
-            }
-        }
-        keywordBoost = Math.min(keywordBoost, 0.2); // Cap at 0.2
-
-        // Length penalty: slight penalty for very long verses
-        double lengthFactor = 1.0;
-        int textLength = sv.verse.getText().length();
-        if (textLength > 300) {
-            lengthFactor = 0.95;
-        } else if (textLength > 500) {
-            lengthFactor = 0.9;
-        }
-
-        // Combine scores
-        double finalScore = (baseScore + keywordBoost) * lengthFactor;
-        
-        // Normalize to 0-1 range
-        return Math.min(1.0, Math.max(0.0, finalScore));
+    private double blendScores(double embeddingScore, double rerankerScore) {
+        return embeddingWeight * embeddingScore + rerankerWeight * rerankerScore;
     }
 
     /**
