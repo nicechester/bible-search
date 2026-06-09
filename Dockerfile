@@ -45,6 +45,32 @@ RUN if [ ! -f src/main/resources/models/bge-m3-ko/tokenizer.json ]; then \
       echo "Tokenizer already exists"; \
     fi
 
+# Download BGE Reranker v2-m3 (int8 quantized) if not present
+RUN mkdir -p src/main/resources/models/bge-reranker-v2-m3 && \
+    if [ ! -f src/main/resources/models/bge-reranker-v2-m3/model_quantized.onnx ] || [ $(stat -c%s src/main/resources/models/bge-reranker-v2-m3/model_quantized.onnx 2>/dev/null || echo 0) -lt 100000000 ]; then \
+      echo "Downloading BGE Reranker v2-m3 (int8 quantized) from HuggingFace..." && \
+      curl -fSL --retry 3 --retry-delay 5 -o src/main/resources/models/bge-reranker-v2-m3/model_quantized.onnx \
+        'https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/main/onnx/model_quantized.onnx' && \
+      MODEL_SIZE=$(stat -c%s src/main/resources/models/bge-reranker-v2-m3/model_quantized.onnx) && \
+      echo "Reranker model downloaded: ${MODEL_SIZE} bytes" && \
+      if [ "$MODEL_SIZE" -lt 100000000 ]; then \
+        echo "ERROR: Reranker model file too small, download may have failed" && \
+        exit 1; \
+      fi; \
+    else \
+      echo "Reranker model already exists"; \
+    fi
+
+# Download Reranker tokenizer if not present
+RUN if [ ! -f src/main/resources/models/bge-reranker-v2-m3/tokenizer.json ]; then \
+      echo "Downloading reranker tokenizer..." && \
+      curl -fSL --retry 3 -o src/main/resources/models/bge-reranker-v2-m3/tokenizer.json \
+        'https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/main/tokenizer.json' && \
+      echo "Reranker tokenizer downloaded successfully"; \
+    else \
+      echo "Reranker tokenizer already exists"; \
+    fi
+
 # Copy pre-built SQLite databases
 # These are much faster than generating embeddings during build (~10-20s vs ~3-5 min)
 # To update embeddings: ./build-embeddings.sh && ./upload-embeddings.sh

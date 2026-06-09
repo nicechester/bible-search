@@ -39,9 +39,9 @@ if [ ! -f "pom.xml" ]; then
     exit 1
 fi
 
-# 2. Check if ONNX model exists
+# 2. Check if BGE-M3-Ko embedding model exists
 if [ ! -f "src/main/resources/models/bge-m3-ko/model.onnx" ]; then
-    echo "❌ Error: ONNX model not found!"
+    echo "❌ Error: BGE-M3-Ko embedding model not found!"
     echo "   Download the model first:"
     echo ""
     echo "   mkdir -p src/main/resources/models/bge-m3-ko"
@@ -51,9 +51,9 @@ if [ ! -f "src/main/resources/models/bge-m3-ko/model.onnx" ]; then
     exit 1
 fi
 
-# 3. Check if tokenizer exists
+# 3. Check if embedding tokenizer exists
 if [ ! -f "src/main/resources/models/bge-m3-ko/tokenizer.json" ]; then
-    echo "❌ Error: Tokenizer not found!"
+    echo "❌ Error: Embedding tokenizer not found!"
     echo "   Download the tokenizer first:"
     echo ""
     echo "   curl -L -o src/main/resources/models/bge-m3-ko/tokenizer.json \\"
@@ -62,7 +62,23 @@ if [ ! -f "src/main/resources/models/bge-m3-ko/tokenizer.json" ]; then
     exit 1
 fi
 
-# 4. Check if Bible data exists
+# 4. Check if BGE Reranker model exists (optional, will download in Docker if missing)
+if [ ! -f "src/main/resources/models/bge-reranker-v2-m3/model_quantized.onnx" ]; then
+    echo "⚠️  Warning: BGE Reranker v2-m3 model not found locally"
+    echo "   The model will be downloaded during Docker build (adds ~5 minutes)"
+    echo "   To pre-download and speed up deployment:"
+    echo ""
+    echo "   mkdir -p src/main/resources/models/bge-reranker-v2-m3"
+    echo "   wget -O src/main/resources/models/bge-reranker-v2-m3/model_quantized.onnx \\"
+    echo "     'https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/main/onnx/model_quantized.onnx'"
+    echo "   curl -L -o src/main/resources/models/bge-reranker-v2-m3/tokenizer.json \\"
+    echo "     'https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/main/tokenizer.json'"
+    echo ""
+    echo "   Continuing with build (Docker will download the model)..."
+    echo ""
+fi
+
+# 5. Check if Bible data exists
 if [ ! -f "src/main/resources/bible/bible_krv.json" ] || [ ! -f "src/main/resources/bible/bible_asv.json" ]; then
     echo "❌ Error: Bible data files not found!"
     echo "   Expected files:"
@@ -71,14 +87,14 @@ if [ ! -f "src/main/resources/bible/bible_krv.json" ] || [ ! -f "src/main/resour
     exit 1
 fi
 
-# 5. Check if gcloud is installed
+# 6. Check if gcloud is installed
 if ! command -v gcloud &> /dev/null; then
     echo "❌ Error: gcloud CLI not installed"
     echo "   Install: https://cloud.google.com/sdk/docs/install"
     exit 1
 fi
 
-# 6. Check if Docker is running
+# 7. Check if Docker is running
 if ! docker info &> /dev/null; then
     echo "❌ Error: Docker is not running"
     echo "   Please start Docker Desktop or Docker daemon"
