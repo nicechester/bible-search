@@ -17,8 +17,8 @@
     <properties>
         <java.version>21</java.version>
         <jackson.version>2.19.2</jackson.version>
-        <langchain4j.version>1.2.0</langchain4j.version>
-        <langchain4j-extras.version>1.2.0-beta8</langchain4j-extras.version>
+        <langchain4j.version>1.16.1</langchain4j.version>
+        <langchain4j-extras.version>1.16.1-beta26</langchain4j-extras.version>
     </properties>
     
     <dependencies>
@@ -57,7 +57,7 @@
             <version>${jackson.version}</version>
         </dependency>
         
-        <!-- LangChain4j - Embeddings Only (No LLM) -->
+        <!-- LangChain4j - Core + ONNX support (BGE models) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
@@ -65,12 +65,12 @@
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-embeddings-all-minilm-l6-v2-q</artifactId>
+            <artifactId>langchain4j-embeddings</artifactId>
             <version>${langchain4j-extras.version}</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-embeddings</artifactId>
+            <artifactId>langchain4j-onnx-scoring</artifactId>
             <version>${langchain4j-extras.version}</version>
         </dependency>
         

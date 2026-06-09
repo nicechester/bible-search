@@ -31,6 +31,16 @@ bible:
     # Stage 2: Re-ranking & filtering
     result-count: 5
     min-score: 0.3
+    # Score blending weights (ONNX reranker + embedding score)
+    embedding-weight: ${SEARCH_EMBEDDING_WEIGHT:0.5}
+    reranker-weight: ${SEARCH_RERANKER_WEIGHT:0.5}
+
+  # Reranker configuration (BGE Reranker v2-m3 - quantized)
+  reranker:
+    enabled: ${RERANKER_ENABLED:true}
+    model-path: ${RERANKER_MODEL_PATH:classpath:models/bge-reranker-v2-m3/model_quantized.onnx}
+    tokenizer-path: ${RERANKER_TOKENIZER_PATH:classpath:models/bge-reranker-v2-m3/tokenizer.json}
+    model-max-length: ${RERANKER_MAX_LENGTH:512}
 
   # Commentary database
   commentary:
